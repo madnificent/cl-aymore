@@ -1,6 +1,7 @@
 ;;;;  This is the micro html-generation-library.  It is possible to make this more efficiently by using functions, but that can be implemented later.
 (defpackage minions.html
-  (:use :common-lisp))
+  (:use :common-lisp)
+  (:export :htmlify))
 
 (in-package :minions.html)
 
