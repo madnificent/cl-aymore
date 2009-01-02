@@ -1,10 +1,10 @@
 ;;;;  This is the micro html-generation-library.  It is possible to make this more efficiently by using functions, but that can be implemented later.
-
 (defpackage minions.html
   (:use :common-lisp))
 
 (in-package :minions.html)
 
+(declaim (inline tagify))
 (defun tagify (keyword options &optional (contentp nil))
   "Creates the printed tag for the given keyword"
   (if contentp
