@@ -1,7 +1,22 @@
-;;;;  This is the micro html-generation-library.  It is possible to make this more efficiently by using functions, but that can be implemented later.
+;;;; This is the micro HTML-generation-library.  It is possible to make this more efficient by expanding the functions, but that can be implemented later.
+;;;; TODO: Throw all the existing tags from the xhtml standard in here and implement them
 (defpackage minions.html
   (:use :common-lisp)
-  (:export :htmlify))
+  (:export :htmlify
+	   :html 
+	   :head 
+	   :title 
+	   :body 
+	   :h1 
+	   :h2 
+	   :h3 
+	   :h4 
+	   :h5 
+	   :h6 
+	   :p 
+	   :div 
+	   :span 
+	   :strong))
 
 (in-package :minions.html)
 
@@ -36,4 +51,11 @@
 			 content)
 		    end-tag)
 	    start-tag)))))
-      
+
+;; The following makes it easy to define new tags, yet it does not yet make it efficient.
+;; It does, however, give us a place in which we may macro-expand or compiler-macro-expand to precomputed everything we know already
+(eval-when (:compile-toplevel :load-toplevel)
+  (dolist (tag '(html head title body h1 h2 h3 h4 h5 h6 p div span strong))
+    (eval `(defun ,tag (&rest tag-data)
+	     (format nil "TAG :: ~A." (nstring-downcase (string (quote ,tag))))
+	     (htmlify (concatenate 'list (cons (quote ,tag) tag-data)))))))
