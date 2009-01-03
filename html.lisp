@@ -12,9 +12,12 @@
 	   :h3 
 	   :h4 
 	   :h5 
-	   :h6 
+	   :h6
 	   :p 
 	   :div 
+	   :ul
+	   :ol
+	   :li
 	   :span 
 	   :strong))
 
@@ -30,6 +33,9 @@
 
 (defun htmlify (list)
   "Transforms a sexp to an html document."
+  (when (stringp (first list))
+    (return-from htmlify
+      (concatenate 'string (first list) (htmlify (rest list)))))
   (labels ((key-vals (list) 
 	     (let ((content (rest list))
 		   (keys nil))
@@ -55,7 +61,7 @@
 ;; The following makes it easy to define new tags, yet it does not yet make it efficient.
 ;; It does, however, give us a place in which we may macro-expand or compiler-macro-expand to precomputed everything we know already
 (eval-when (:compile-toplevel :load-toplevel)
-  (dolist (tag '(html head title body h1 h2 h3 h4 h5 h6 p div span strong))
+  (dolist (tag '(html head title body h1 h2 h3 h4 h5 h6 p div ul ol li span strong))
     (eval `(defun ,tag (&rest tag-data)
-	     (format nil "TAG :: ~A." (nstring-downcase (string (quote ,tag))))
+	     ;;(format nil "TAG :: ~A." (nstring-downcase (string (quote ,tag))))
 	     (htmlify (concatenate 'list (cons (quote ,tag) tag-data)))))))

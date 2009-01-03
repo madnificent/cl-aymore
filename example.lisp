@@ -1,6 +1,7 @@
 (defpackage :my-site
   (:use :common-lisp
-	:minions))
+	:minions
+	:minions.html))
 
 (in-package :my-site)
 
@@ -16,11 +17,32 @@
    (head (title title))
    (body page)))
 
-(defpage "/index.html"
+(defpage "/functional.html"
     (standard-page "Simple example"
       (h1 "Functional!")
-      (p "Good, we have functional content no!")))
+      (p "Good, we have functional content now!")))
 
+; will hold a list of the accesses that have happened to the system up 'til now
+(defvar *requests* nil)
+(defun show-request (request)
+  (div :class "request short" 
+       (span :class "user-agent" (strong :class "title" "user-agent: ") (span :class "content" (first request)))
+       (span :class "request-uri" (strong :class "title" "request-uri: ") (span :class "content" (second request)))))
+(defun store-request ()
+  (push (list (hunchentoot:user-agent) (hunchentoot:request-uri))
+	*requests*))
+
+(defpage "/biggertest.html" bigger-test)
+(defun bigger-test ()
+  (declare (special hunchentoot:*request*))
+  (format T "storing request")
+  (store-request)
+  (format T "stored request")
+  (standard-page "used requests"
+		 (h1 "Overview of the used requests")
+		 (ol :class "requests" (loop for request in *requests* collect (li (show-request request))))
+		 (p "sweet huh?!")))
+		 
 ;; RESTFULL
 (defrest "/posts"
     'list-items
