@@ -43,14 +43,17 @@
    (p "When you look into the source, you may find such statements as hunchentoot:foo , with foo being a keyword in the hunchentoot package.  All those statements are specific to the hunchentoot system.")))
 
 (defpage list-requests "/requests/index.html"
-  (labels ((show-request (request)
-	     (li (hunchentoot:remote-addr request) (hunchentoot:request-uri request))))
+  (labels ((show-request (request nr)
+	     (tr (td (hunchentoot:remote-addr request))
+		 (td (hunchentoot:request-uri request))
+		 (td (link-to-page "details" 'show-request :id nr)))))
     (standard-page 
      "Requests"
-     (ul (loop for request in *requests* collect (show-request request))))))
+     (table (loop for request in *requests*
+	       for i from (1- (length *requests*)) downto 0 collect (show-request request i))))))
 
 (defpage show-request "/requests/show.html"
-  (let ((request (elt (reverse *requests*) (read-from-string (param "id")))))
+  (let ((request (elt (reverse *requests*) (read-from-string (param :id)))))
     (standard-page
      "Request"
      (ul (li (strong "remote-addr") " : " (hunchentoot:remote-addr request))

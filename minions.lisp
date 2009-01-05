@@ -38,4 +38,4 @@
   "Returns the value of the given variable of the last request"
   (if (stringp variable)
       (parameter variable)
-      (parameter (format T "~A" variable))))
+      (parameter (format nil "~A" variable))))
