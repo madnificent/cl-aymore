@@ -78,4 +78,9 @@
 
 (defun build-path (path &rest options)
   "Creates a path for a page with the given key-values options"
-  (format nil "~A?~{~A=~A~^&~}" path options))
+  (format nil "~A~@[?~]~1@*~{~A=~A~^&~}" path options))
+;;  (format nil "~A~@[?~]~:*~{~A=~A~^&~}" path options))  ;; this would be a better option
+;; the if-construct would be understandable, yet I seem to like the complicated format call for now.
+;;   (if options
+;;       (format nil "~A?~{~A=~A~^&~}" path options)
+;;       path))
