@@ -1,7 +1,8 @@
 (defpackage :minions
   (:use :cl :hunchentoot)
   (:export :defpage
-	   :page-path))
+	   :page-path
+	   :param))
 (in-package :minions)
 
 (defparameter *lookup-table* nil)
@@ -32,3 +33,9 @@
 	  statements)
     ;; return the statements
     `(progn ,@(reverse statements))))
+
+(defun param (variable)
+  "Returns the value of the given variable of the last request"
+  (if (stringp variable)
+      (parameter variable)
+      (parameter (format T "~A" variable))))

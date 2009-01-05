@@ -3,8 +3,7 @@
 (defpackage minions.html
   (:use :common-lisp
 	:minions)
-  (:export :htmlify
-	   :html 
+  (:export :html 
 	   :head 
 	   :title 
 	   :body 
@@ -22,7 +21,9 @@
 	   :span 
 	   :strong
 	   :a)
-  (:export :link-to-page))
+  (:export :htmlify
+	   :link-to-page
+	   :build-path))
 
 (in-package :minions.html)
 
@@ -70,6 +71,10 @@
 	     ;;(format nil "TAG :: ~A." (nstring-downcase (string (quote ,tag))))
 	     (htmlify (concatenate 'list (cons (quote ,tag) tag-data)))))))
 
-(defun link-to-page (page name)
+(defun link-to-page (name page &rest options)
   "Links to the given page"
-  (a :href (minions:page-path page) name))
+  (a :href (apply 'build-path (minions:page-path page) options) name))
+
+(defun build-path (path &rest options)
+  "Creates a path for a page with the given key-values options"
+  (format T "~A?~{~A=~A~^&~}" path options))
