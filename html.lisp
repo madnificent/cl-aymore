@@ -28,6 +28,7 @@
 	   :textarea)
   (:export :htmlify
 	   :link-to-page
+	   :redirect-to-page
 	   :build-path))
 
 (in-package :minions.html)
@@ -69,7 +70,7 @@
 
 ;; The following makes it easy to define new tags, yet it does not yet make it efficient.
 ;; It does, however, give us a place in which we may macro-expand or compiler-macro-expand to precomputed everything we know already
-(eval-when (:compile-toplevel :load-toplevel)
+(eval-when (:compile-toplevel :load-toplevel :execute)
   (dolist (tag '(html head title body h1 h2 h3 h4 h5 h6 table tr td p div ul ol li span strong a br form input textarea))
     (eval `(declaim (inline ,tag)))
     (eval `(defun ,tag (&rest tag-data)
@@ -79,6 +80,10 @@
 (defun link-to-page (name page &rest options)
   "Links to the given page"
   (a :href (apply 'build-path (minions:page-path page) options) name))
+
+(defun redirect-to-page (page &rest options)
+  "Redirects to the given page"
+  (hunchentoot:redirect (apply 'build-path (minions:page-path page) options)))
 
 (defun build-path (path &rest options)
   "Creates a path for a page with the given key-values options"

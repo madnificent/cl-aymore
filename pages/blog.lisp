@@ -70,9 +70,11 @@
 	 (input :type "submit"))))
 
 (defpage commit-post "/blog/commit"
+  "This 'page' commits a post in the system"
   (store-post)
-  (index)) ;; redirect would be sweeter
+  (redirect-to-page 'index))
 
 (defpage clear-posts "/blog/clear"
+  "This 'page' clears all posts in the system"
   (setf *posts* nil)
-  (index)) ;; redirect would be sweeter
+  (redirect-to-page 'index))
