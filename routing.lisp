@@ -16,6 +16,7 @@
 (in-package :minions.routing)
 
 (defvar *table* nil)
+(defvar *URL-VARS* nil)
 
 ;; TODO :: This documentation is outdated, it needs a rewrite for the new CLOS-system
 ;; h1. How the routes are defined internally
@@ -54,6 +55,11 @@
 	     :accessor subnodes
 	     :initform nil))
   (:documentation "This is the simplest useable node.  It allows you to define a string that it will 'eat' from the path, and a handler to return if it could find a match."))
+
+(defclass regexp-node (fixed-path-node)
+  ((varname :initarg :var
+	    :accessor varname))
+  (:documentation "A regexp-node stores the result of the regexp in a variable. It uses cl-ppcre for the regexp-library and stores the result of the hash as the hash-value of <var> in the *variables* hash-table"))
 
 (defclass grouping-node (node)
   ((subnodes :initarg :subnodes
@@ -135,6 +141,49 @@
   `(,(base node) ,(handler node) ,@(loop for x in (subnodes node) collect (tableize x))))
 
 
+;; regexp node
+(defmethod handles-path ((node regexp-node) path &rest rest)
+  (declare (ignore rest))
+  (when (cl-ppcre:scan (base node) (split-path node path))
+    (split-path node path)))
+
+(defmethod page-handler ((node regexp-node) (path string) &rest rest)
+  (multiple-value-bind (current-path rest-path)
+      (handles-path node path)
+    (when current-path
+      (flet ((url-vars-enabled (function)
+	       (setf *URL-VARS* (cons (cons (varname node) current-path) *URL-VARS*))
+	       (lambda (&rest args)
+		 (apply function args))))
+	(if rest-path
+	    (loop named handler-finder
+	       for subnode in (subnodes node) do
+	       (let ((handler (apply 'page-handler subnode rest-path rest)))
+		 (when handler 
+		   (princ 5)
+		   (return-from handler-finder (url-vars-enabled handler)))))
+	    (url-vars-enabled (handler node)))))))
+
+(defun url-var (item)
+  "Returns the value of the given variable in the url."
+  (declare (special *url-vars*))
+  (cdr (assoc item *url-vars*)))
+
+(defmethod page-url ((node regexp-node) handler &rest rest)
+  (if (and (eql (handler node) handler)
+	   (getf rest (varname node)))
+      (stringify (getf rest (varname node)))
+      (loop named url-finder
+	 for subnode in (subnodes node) do
+	   (let ((url (apply 'page-url subnode handler rest)))
+	     (when url
+	       (return-from url-finder
+		 (concatenate 'string (stringify (getf rest (varname node))) (string +URLSPLIT+) url)))))))
+
+(defun stringify (item)
+  "Gets the item so it is a string."
+  (format nil "~A" item))
+
 ;; grouping node
 (defmethod set-page-handler ((node grouping-node) (path string) handler &rest rest)
   (dolist (subnode (subnodes node))
@@ -171,8 +220,8 @@
 
 (defun get-page-handler (path)
   (page-handler *table* path))
-(defun get-page-url (page)
-  (page-url *table* page))
+(defun get-page-url (page &rest rest)
+  (apply 'page-url *table* page rest))
 (defun add-page (path handler)
   (set-page-handler *table* path handler))
 (defun print-table ()
