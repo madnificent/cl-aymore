@@ -103,17 +103,6 @@
 	  content)
     (reverse resulting-list)))
 
-(defmacro defhandles (name (base &rest args) documentation &body body)
-  "Allows users to create a new clause for the handles expanders.
-   This will receive some content and must then return a new list, which will be spliced into the given routing table."
-  `(defun ,name (,base ,@args)
-     ,documentation
-     ,@body))
-
-(defhandles loosely (page)
-    "Allows a page to be linked both through foo and foo/, with foo being the predefined regexp in the routing table"
-  `(,page ("" ,page)))
-
 (defmacro with-parsing-environment (&body body)
   "Sets up the environment for the parsing of the url.  This will give you the basic space to store variables in etc."
   `(let ((url-variables nil))
@@ -180,6 +169,13 @@
 		   (setf url-sections new-url-sections)
 		   (return-from search-url nil))))))))
 
+(defmacro defhandles (name (base &rest args) documentation &body body)
+  "Allows users to create a new clause for the handles expanders.
+   This will receive some content and must then return a new list, which will be spliced into the given routing table."
+  `(defun ,name (,base ,@args)
+     ,documentation
+     ,@body))
+
 (defmacro defhandler (name documentation ((&rest to-page-args) &body to-page-body) ((&rest to-url-args) &body to-url-body))
   `(defun ,name (dir)
      ,documentation
@@ -189,6 +185,10 @@
 	   ((eql dir :to-url)
 	    (lambda ,to-url-args
 	      ,@to-url-body)))))
+
+(defhandles loosely (page)
+    "Allows a page to be linked both through foo and foo/, with foo being the predefined regexp in the routing table"
+  `(,page ("" ,page)))
 
 (defhandler sets
     "Sets the currently matched url-part to the given variable"
