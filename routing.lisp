@@ -183,24 +183,26 @@
 
 (defmacro defwhen (name documentation ((&rest assert-args) &body assert-body) ((&rest enforce-args) &body enforce-body))
   "Allows users to create new conditionally allowed parts in the routing.  The current system is not allowed to change the URLs in any way, this may be subject to change."
-  `(defun ,name (dir)
-     ,documentation
-     (cond ((eql dir :assert)
-	    (lambda ,assert-args
-	      ,@assert-body))
-	   ((eql dir :enforce)
-	    (lambda ,enforce-args
-	      ,@enforce-body)))))
+  (let ((dir (gensym)))
+    `(defun ,name (,dir)
+       ,documentation
+       (cond ((eql ,dir :assert)
+	      (lambda ,assert-args
+		,@assert-body))
+	     ((eql ,dir :enforce)
+	      (lambda ,enforce-args
+		,@enforce-body))))))
 
 (defmacro defhandler (name documentation ((&rest to-page-args) &body to-page-body) ((&rest to-url-args) &body to-url-body))
-  `(defun ,name (dir)
-     ,documentation
-     (cond ((eql dir :to-page)
-	    (lambda ,to-page-args
-	      ,@to-page-body))
-	   ((eql dir :to-url)
-	    (lambda ,to-url-args
-	      ,@to-url-body)))))
+  (let ((dir (gensym)))
+    `(defun ,name (,dir)
+       ,documentation
+       (cond ((eql ,dir :to-page)
+	      (lambda ,to-page-args
+		,@to-page-body))
+	     ((eql ,dir :to-url)
+	      (lambda ,to-url-args
+		,@to-url-body))))))
 
 (defwhen always
     "Simple when-clause that may be executed in any case"
