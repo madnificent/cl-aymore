@@ -129,7 +129,7 @@
 (defun search-handler (route url-sections)
   "Searches for a handler for the current page in the currently known urls."
   (with-local-parsing-environment
-    (when (cl-ppcre:scan (first route) (first url-sections))
+    (when (cl-ppcre:scan (concatenate 'string "^" (first route) "$") (first url-sections))
       ;; moving to an iterative solution
       (maplist
        (lambda (unhandled-routing-directives)
@@ -142,6 +142,8 @@
 		  (let ((handler (search-handler item (rest url-sections))))
 		    (when handler
 		      (return-from search-handler handler))))
+		 ((and (null (rest url-sections)) (listp item) (eq (first item) 'when))
+		  (util:return-when search-handler (apply (funcall (second item) :assert) (rest (rest item)))))
 		 ((and (listp item) (eq (first item) 'handler))
 		  (apply (funcall (second item) :to-page) (first url-sections) (rest (rest item)))
 		  (util:return-when search-handler (search-handler `(,(first route) ,@(rest unhandled-routing-directives)) url-sections))))))
@@ -163,8 +165,11 @@
 	       (return-from search-url url-sections)))
 	    ((and (listp item) (stringp (first item)))
 	     (util:return-when search-url (apply 'search-url item page url-sections options)))
+	    ((and (listp item) (eq (first item) 'when))
+	     (when (eql (apply (funcall (second item) :enforce) (rest (rest item))) page)
+	       (return-from search-url url-sections)))
 	    ((and (listp item) (eq (first item) 'handler))
-	     (let ((new-url-sections (apply (funcall (second item) :to-url) url-sections options (rest (rest item)))))
+	     (let ((new-url-sections (apply (funcall (second item) :to-url) (rest (rest item)))))
 	       (if new-url-sections
 		   (setf url-sections new-url-sections)
 		   (return-from search-url nil))))))))
@@ -176,6 +181,17 @@
      ,documentation
      ,@body))
 
+(defmacro defwhen (name documentation ((&rest assert-args) &body assert-body) ((&rest enforce-args) &body enforce-body))
+  "Allows users to create new conditionally allowed parts in the routing.  The current system is not allowed to change the URLs in any way, this may be subject to change."
+  `(defun ,name (dir)
+     ,documentation
+     (cond ((eql dir :assert)
+	    (lambda ,assert-args
+	      ,@assert-body))
+	   ((eql dir :enforce)
+	    (lambda ,enforce-args
+	      ,@enforce-body)))))
+
 (defmacro defhandler (name documentation ((&rest to-page-args) &body to-page-body) ((&rest to-url-args) &body to-url-body))
   `(defun ,name (dir)
      ,documentation
@@ -186,9 +202,22 @@
 	    (lambda ,to-url-args
 	      ,@to-url-body)))))
 
+(defwhen always
+    "Simple when-clause that may be executed in any case"
+  ((item) item)
+  ((item) item))
+(defwhen never
+    "Simple when-clause that may never be executed"
+  ((item) (declare (ignore item)) nil)
+  ((item) (declare (ignore item)) nil))
+
 (defhandles loosely (page)
     "Allows a page to be linked both through foo and foo/, with foo being the predefined regexp in the routing table"
   `(,page ("" ,page)))
+
+(defhandles only-when (page condition)
+    "Converts (handles page when condition) to (when condition page), for those that would like one definition above the other."
+  `((when ,condition ,page)))
 
 (defhandler sets
     "Sets the currently matched url-part to the given variable"
