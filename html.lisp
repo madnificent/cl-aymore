@@ -60,14 +60,14 @@
       (multiple-value-bind (start-tag end-tag)
 	  (tagify (first list) keys content)
 	(if end-tag
-	    (format nil "~A~%~{~A~}~%~A" 
-		    start-tag
+	    (format nil "~A~{~A~}~A" 
+		    (string-downcase (string start-tag))
 		    (map 'list (lambda (x)
 				 (if (stringp x)
 				     x
 				     (htmlify x)))
 			 content)
-		    end-tag)
+		    (string-downcase (string end-tag)))
 	    start-tag)))))
 
 ;; The following makes it easy to define new tags, yet it does not yet make it efficient.
