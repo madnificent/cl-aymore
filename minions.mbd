@@ -5,6 +5,8 @@
   (:licence "MIT Style license")
   (:documentation "Minions is a user-defined webframework to quicken the development of easy to maintain applications.")
   (:components
+   "helpers"
+   "routing"
    "minions"
    "html")
   (:needs :hunchentoot))

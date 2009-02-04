@@ -1,5 +1,6 @@
 (defpackage :minions.routing
   (:use :common-lisp
+	:hunchentoot
 	:cl-ppcre)
   (:export :set-routing-table
 	   :page-handler
@@ -69,7 +70,7 @@
 ;; example:
 ;;  (move "foo/bar" "foo/baz")
 ;;  (delete "foo/bar")
-;;  (insert "foo/bar" (subtable-list))
+;;  (insert "foo/bar" (handles bar loosely) ("search" 'search))
 ;;  (update "foo/bar" (subtable-list)) ; this is a delete and an insert
 ;;  (readable-table)
 ;;
@@ -85,7 +86,12 @@
 (defvar *url-variables* nil)
 
 (defun set-routing-table (content)
-  (setf *ROUTING-TABLE* (expand-handles-cases content)))
+  (setf *ROUTING-TABLE* (expand-handles-cases content))
+  (setf hunchentoot:*dispatch-table* 
+	(list (create-prefix-dispatcher "" 'hunchentoot-get-handler))))
+
+(defun hunchentoot-get-handler ()
+  (funcall (page-handler (first (cl-ppcre:scan-to-strings "$[^\\?]+" (hunchentoot:request-uri))))))
 
 (defun expand-handles-cases (content)
   (let ((resulting-list))
@@ -154,7 +160,7 @@
   (dolist (route *ROUTING-TABLE*)
     (let ((url (apply 'search-url route page nil options)))
       (when url
-	(return-from handler-url (format nil "~{~a~^/~}" (reverse url)))))))
+	(return-from handler-url (format nil "/~{~a~^/~}" (reverse url)))))))
 
 (defun search-url (route page url-sections &rest options)
   "Searches for a url of the given page, for the current (sub) route."
