@@ -1,8 +1,3 @@
-(defpackage :minions
-  (:use :cl :hunchentoot)
-  (:export :defpage
-	   :page-path
-	   :param))
 (in-package :minions)
 
 (defparameter *lookup-table* nil)

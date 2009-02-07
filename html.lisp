@@ -1,40 +1,5 @@
 ;;;; This is the micro HTML-generation-library.  It is possible to make this more efficient by expanding the functions, but that can be implemented later.
 ;;;; TODO: Throw all the existing tags from the xhtml standard in here and implement them
-(defpackage minions.html
-  (:use :common-lisp
-	:minions
-	:minions.routing)
-  (:export :html 
-	   :head 
-	   :title 
-	   :body 
-	   :h1 
-	   :h2 
-	   :h3 
-	   :h4 
-	   :h5 
-	   :h6
-	   :table :tr :td
-	   :p 
-	   :div 
-	   :ul
-	   :ol
-	   :li
-	   :span 
-	   :strong
-	   :em
-	   :b :i
-	   :a
-	   :br
-	   :form
-	   :input
-	   :textarea
-	   :style)
-  (:export :htmlify
-	   :link-to-page
-	   :redirect-to-page
-	   :build-path))
-
 (in-package :minions.html)
 
 (declaim (inline tagify))

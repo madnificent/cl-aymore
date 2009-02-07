@@ -1,16 +1,3 @@
-(defpackage :minions.routing
-  (:use :common-lisp
-	:hunchentoot
-	:cl-ppcre)
-  (:export :set-routing-table
-	   :page-handler
-	   :handler-url
-	   :defhandler
-	   :sets
-	   :url-var
-	   :defhandles
-	   :loosely))
-	   
 (in-package :minions.routing)
 
 ;; The current idea is to work from the data structure the user has given us.  This means that that data structure will be the internal representation too.
@@ -85,14 +72,21 @@
 (defvar *ROUTING-TABLE* nil)
 (defvar *url-variables* nil)
 
+
+;;;; Stuff that needs cleaning up
+(setf hunchentoot:*dispatch-table*
+      (list (create-prefix-dispatcher "" 'hunchentoot-get-handler)))
+
 (defun set-routing-table (content)
-  (setf *ROUTING-TABLE* (expand-handles-cases content))
-  (setf hunchentoot:*dispatch-table* 
-	(list (create-prefix-dispatcher "" 'hunchentoot-get-handler))))
+  (setf *ROUTING-TABLE* (expand-handles-cases content)))
 
 (defun hunchentoot-get-handler ()
-  (funcall (page-handler (first (cl-ppcre:scan-to-strings "$[^\\?]+" (hunchentoot:request-uri))))))
+  (declare (special hunchentoot:*request*))
+  (let ((func (page-handler (cl-ppcre:scan-to-strings "[^\\?]+" (hunchentoot:request-uri hunchentoot:*request*)))))
+    (when func
+      (funcall func))))
 
+;;;; Routing system
 (defun expand-handles-cases (content)
   (let ((resulting-list))
     (mapc (lambda (item)
@@ -142,7 +136,7 @@
 	 (let ((item (first unhandled-routing-directives)))
 	   (cond ((or (symbolp item) (functionp item))
 		  (when (null (rest url-sections))
-		    (setf *url-variables* url-variables) ;; storing the currently valid fetched variables
+		    (setf *url-variables* url-variables) ;; storing the currently valid fetched variables (should be done in some sort of handler)
 		    (return-from search-handler item)))
 		 ((and (listp item) (stringp (first item)))
 		  (let ((handler (search-handler item (rest url-sections))))
@@ -153,16 +147,17 @@
 		 ((and (listp item) (eq (first item) 'handler))
 		  (apply (funcall (second item) :to-page) (first url-sections) (rest (rest item)))
 		  (util:return-when search-handler (search-handler `(,(first route) ,@(rest unhandled-routing-directives)) url-sections))))))
-       (rest route)))))
+       (rest route))
+      nil)))
 
 (defun handler-url (page &rest options)
   "Finds the url for a given page-handler.  The options can specify any number of (currently unspecified options)"
   (dolist (route *ROUTING-TABLE*)
-    (let ((url (apply 'search-url route page nil options)))
+    (let ((url (search-url route page nil options)))
       (when url
-	(return-from handler-url (format nil "/~{~a~^/~}" (reverse url)))))))
+	(return-from handler-url (format nil "~{~a~^/~}" (reverse url)))))))
 
-(defun search-url (route page url-sections &rest options)
+(defun search-url (route page url-sections options)
   "Searches for a url of the given page, for the current (sub) route."
   (let ((url-sections (cons (first route) url-sections))) ;; last part of the url is the first item in this list
     (dolist (item (rest route))
@@ -170,12 +165,12 @@
 	     (when (eql page item)
 	       (return-from search-url url-sections)))
 	    ((and (listp item) (stringp (first item)))
-	     (util:return-when search-url (apply 'search-url item page url-sections options)))
+	     (util:return-when search-url (search-url item page url-sections options)))
 	    ((and (listp item) (eq (first item) 'when))
 	     (when (eql (apply (funcall (second item) :enforce) (rest (rest item))) page)
 	       (return-from search-url url-sections)))
 	    ((and (listp item) (eq (first item) 'handler))
-	     (let ((new-url-sections (apply (funcall (second item) :to-url) (rest (rest item)))))
+	     (let ((new-url-sections (funcall (funcall (second item) :to-url) url-sections options (rest (rest item)))))
 	       (if new-url-sections
 		   (setf url-sections new-url-sections)
 		   (return-from search-url nil))))))))
