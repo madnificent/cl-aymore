@@ -12,9 +12,18 @@
 
 (defun htmlify (list)
   "Transforms a sexp to an html document."
+  (when (stringp list)
+    (return-from htmlify list))
+  (when (eql list nil)
+    (return-from htmlify ""))
   (when (stringp (first list))
     (return-from htmlify
       (concatenate 'string (first list) (htmlify (rest list)))))
+  (when (listp (first list))
+    (return-from htmlify
+      (concatenate 'string
+		   (apply 'concatenate 'string (map 'list 'htmlify (first list)))
+		   (htmlify (rest list)))))
   (labels ((key-vals (list) 
 	     (let ((content (rest list))
 		   (keys nil))
@@ -40,7 +49,7 @@
 ;; The following makes it easy to define new tags, yet it does not yet make it efficient.
 ;; It does, however, give us a place in which we may macro-expand or compiler-macro-expand to precomputed everything we know already
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (dolist (tag '(html head title body h1 h2 h3 h4 h5 h6 table tr td p div ul ol li span strong a br form input textarea style b i em))
+  (dolist (tag '(html head title body h1 h2 h3 h4 h5 h6 table tr td p div ul ol li span strong a br form input textarea style b i em hidden))
     (eval `(declaim (inline ,tag)))
     (eval `(defun ,tag (&rest tag-data)
 	     ;;(format nil "TAG :: ~A." (nstring-downcase (string (quote ,tag))))
@@ -58,6 +67,22 @@
   (hunchentoot:redirect (apply 'build-path 
 			       (apply 'minions.routing:handler-url page page-options) 
 			       path-options)))
+
+(defun button-to (page name url-options key-values)
+  "Creates a button to the given page, with the given caption on the button and the given url-options and key-values"
+  (form :method "post" :action (apply 'minions.routing:handler-url page url-options)
+	(loop for i from 0 below (length key-values)
+	   by 2
+	   collect
+	     (hidden :name (elt key-values i) :value (elt key-values (1+ i))))
+	(input :type "submit" :value name)))
+
+(defun bttn-to (page button-name &key variable-name (url-options nil))
+  "Creates a simple form-button to the given page"
+  (form :method "post" :action (apply 'minions.routing:handler-url page url-options)
+	(if variable-name
+	    (input :type "submit" :name variable-name :value button-name)
+	    (input :type "submit" :value button-name))))
 
 (defun build-path (path &rest options)
   "Creates a path for a page with the given key-values options"
