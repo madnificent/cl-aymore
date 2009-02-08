@@ -53,6 +53,16 @@
 ;;                         (handles update-user when post-request)))))
 ;;
 ;; h2. stage 7
+;;  Named subsections.  These named subsections can be updated without direct table manipulation.  This would provide better support for creating plugins that contain routes to manage the plugins.
+;; example:
+;;  (defsubroute users (handles users loosely)
+;;                     ("\\d+" (handler sets user-id)
+;;                      (handles show-user when get-request)
+;;                      (handles update-user when post-request))))
+;;  (set-routing-table '(("" index
+;;                        (subroute users for "users")))))
+;;
+;; h2. stage 8
 ;;  Operations for managing the routing table.  These operations are only basic, as the more complicated behavior can be done manually (readable-table) gives you a table that is editable.  Manipulating that list (which is easy) allows the system to be reconfigured based on the user's needs.
 ;; example:
 ;;  (move "foo/bar" "foo/baz")
@@ -60,18 +70,12 @@
 ;;  (insert "foo/bar" (handles bar loosely) ("search" 'search))
 ;;  (update "foo/bar" (subtable-list)) ; this is a delete and an insert
 ;;  (readable-table)
-;;
-;; h2. stage 8
-;;  Named subsections.  These named subsections can be updated without direct table manipulation.  This would provide better support for creating plugins that contain routes to manage the plugins.
-;; example:
-;;  (insert "foo/bar" 'posts-routing)
-;;  (update 'posts-routing '("posts" (handles post-list loosely) ("\\d+" (handler sets post-id) (when get-request show-post))))
 
 (defconstant +URLSPLIT+ #\/)
 
 (defvar *ROUTING-TABLE* nil)
 (defvar *url-variables* nil)
-
+(defvar *subroutes* (make-hash-table))
 
 ;;;; Stuff that needs cleaning up
 (setf hunchentoot:*dispatch-table*
@@ -85,6 +89,14 @@
   (let ((func (page-handler (cl-ppcre:scan-to-strings "[^\\?]+" (hunchentoot:request-uri hunchentoot:*request*)))))
     (when func
       (funcall func))))
+
+;;;; subroute definition
+(defun subroute (name)
+  "Returns the subroute defined by <name>"
+  (gethash name *subroutes*))
+(defun set-subroute (name route)
+  (setf (gethash name *subroutes*) route))
+(defsetf subroute set-subroute)
 
 ;;;; Routing system
 (defun expand-handles-cases (content)
@@ -134,17 +146,24 @@
       (maplist
        (lambda (unhandled-routing-directives)
 	 (let ((item (first unhandled-routing-directives)))
-	   (cond ((or (symbolp item) (functionp item))
+	   (cond (;; handler-function
+		  (or (symbolp item) (functionp item))
 		  (when (null (rest url-sections))
 		    (setf *url-variables* url-variables) ;; storing the currently valid fetched variables (should be done in some sort of handler)
 		    (return-from search-handler item)))
-		 ((and (listp item) (stringp (first item)))
+		 (;; inline subroute
+		  (and (listp item) (stringp (first item)))
 		  (let ((handler (search-handler item (rest url-sections))))
 		    (when handler
 		      (return-from search-handler handler))))
-		 ((and (null (rest url-sections)) (listp item) (eq (first item) 'when))
+		 (;; subroute case
+		  (and (listp item) (eq (first item) 'subroute))
+		  (util:return-when search-handler (search-handler `(,(fourth item) ,@(subroute (second item))) (rest url-sections))))
+		 (;; when case
+		  (and (null (rest url-sections)) (listp item) (eq (first item) 'when))
 		  (util:return-when search-handler (apply (funcall (second item) :assert) (rest (rest item)))))
-		 ((and (listp item) (eq (first item) 'handler))
+		 (;; handler case
+		  (and (listp item) (eq (first item) 'handler))
 		  (apply (funcall (second item) :to-page) (first url-sections) (rest (rest item)))
 		  (util:return-when search-handler (search-handler `(,(first route) ,@(rest unhandled-routing-directives)) url-sections))))))
        (rest route))
