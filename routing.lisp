@@ -180,15 +180,22 @@
   "Searches for a url of the given page, for the current (sub) route."
   (let ((url-sections (cons (first route) url-sections))) ;; last part of the url is the first item in this list
     (dolist (item (rest route))
-      (cond ((or (symbolp item) (functionp item))
+      (cond (;; handler function
+	     (or (symbolp item) (functionp item))
 	     (when (eql page item)
 	       (return-from search-url url-sections)))
-	    ((and (listp item) (stringp (first item)))
+	    (;; inline subroute
+	     (and (listp item) (stringp (first item)))
 	     (util:return-when search-url (search-url item page url-sections options)))
-	    ((and (listp item) (eq (first item) 'when))
+	    (;; subroute case
+	     (and (listp item) (eq (first item) 'subroute))
+	     (util:return-when search-url (search-url `(,(fourth item) ,@(subroute (second item))) page url-sections options)))
+	    (;; when case
+	     (and (listp item) (eq (first item) 'when))
 	     (when (eql (apply (funcall (second item) :enforce) (rest (rest item))) page)
 	       (return-from search-url url-sections)))
-	    ((and (listp item) (eq (first item) 'handler))
+	    (;; handler case
+	     (and (listp item) (eq (first item) 'handler))
 	     (let ((new-url-sections (funcall (funcall (second item) :to-url) url-sections options (rest (rest item)))))
 	       (if new-url-sections
 		   (setf url-sections new-url-sections)
@@ -253,26 +260,3 @@
 (defun url-var (variable)
   "Returns the value of the variable found in the url."
   (cdr (assoc variable *url-variables*)))
-	   
-;; (set-routing-table
-;;  ("admin"
-;;   'site.admin:overview
-;;   ("users"
-;;    'site.admin.users:index
-;;    ("" 'site.admin.users:index)
-;;    ("\d+" (handler identifies 'backend.users:user *user* by :id)
-;; 	  (handles 'site.admin.users:show when (minions:request-method :get))
-;; 	  (handles 'site.admin.users:create when (minions:request-method :put))
-;; 	  (handles 'site.admin.users:destroy when (minions:request-method :destroy))
-;; 	  ("edit" 'site.admin.users:edit when (minions:request-method :get)
-;; 		  'site.admin.users:update when (minions:request-method :put))
-;; 	  ("new" 'site.admin.users:new when (minions:request-method :get)
-;; 		 'site.admin.users:new when (mininos:request-method :put))))
-;;   ("tickets"
-;;    (handles 'site.ticketing:index loosely)
-;;    ("" 'site.ticketing:index)
-;;    (".*" (handler identifies 'backend.ticketing by :title)))
-;;   ("settings"
-;;    (handles 'site.config:index loosely)
-;;    ("config" (handles 'site.config:edit when (minions:request-method :get))
-;; 	     (handles 'site.config:commit when (minions:request-method :put))))))

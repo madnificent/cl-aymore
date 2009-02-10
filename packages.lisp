@@ -27,7 +27,8 @@
 	   :sets
 	   :url-var
 	   :defhandles
-	   :loosely))
+	   :loosely
+	   :subroute))
 	   
 (defpackage minions.html
   (:use :common-lisp
