@@ -62,7 +62,7 @@
 		  path-options)
      name))
 
-(defun redirect-to-page (page &optional (page-options nil) &rest path-options)
+(defun redirect-to-page (page &key (page-options nil) (path-options nil))
   "Redirects to the given page"
   (hunchentoot:redirect (apply 'build-path 
 			       (apply 'minions.routing:handler-url page page-options) 
@@ -87,6 +87,7 @@
 (defun build-path (path &rest options)
   "Creates a path for a page with the given key-values options"
   (format nil "~A~@[?~]~1@*~{~A=~A~^&~}" path options))
+
 ;;  (format nil "~A~@[?~]~:*~{~A=~A~^&~}" path options))  ;; this would be a better option
 ;; the if-construct would be understandable, yet I seem to like the complicated format call for now.
 ;;   (if options
