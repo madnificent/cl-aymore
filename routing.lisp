@@ -253,9 +253,10 @@
   ((url-part variable)
    (declare (special url-variables))
    (push (cons variable url-part) url-variables))
-  ((url-sections options variable)
-   (when (getf options variable)
-     (cons (getf options variable) (rest url-sections)))))
+  ((url-sections options variables)
+   (let ((var (first variables)))
+     (when (getf options var)
+       (cons (getf options var) (rest url-sections))))))
 
 (defun url-var (variable)
   "Returns the value of the variable found in the url."

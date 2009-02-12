@@ -27,6 +27,7 @@
 	   :sets
 	   :url-var
 	   :defhandles
+	   :handles
 	   :loosely
 	   :subroute))
 	   
