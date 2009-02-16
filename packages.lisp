@@ -29,7 +29,12 @@
 	   :defhandles
 	   :handles
 	   :loosely
-	   :subroute))
+	   :subroute
+	   :post-request
+	   :get-request
+	   :identifies
+	   :def-identification-handler
+	   :identifies-function))
 	   
 (defpackage minions.html
   (:use :common-lisp

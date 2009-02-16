@@ -74,7 +74,6 @@
 (defconstant +URLSPLIT+ #\/)
 
 (defvar *ROUTING-TABLE* nil)
-(defvar *url-variables* nil)
 (defvar *subroutes* (make-hash-table))
 
 ;;;; Stuff that needs cleaning up
@@ -200,64 +199,3 @@
 	       (if new-url-sections
 		   (setf url-sections new-url-sections)
 		   (return-from search-url nil))))))))
-
-(defmacro defhandles (name (base &rest args) documentation &body body)
-  "Allows users to create a new clause for the handles expanders.
-   This will receive some content and must then return a new list, which will be spliced into the given routing table."
-  `(defun ,name (,base ,@args)
-     ,documentation
-     ,@body))
-
-(defmacro defwhen (name documentation ((&rest assert-args) &body assert-body) ((&rest enforce-args) &body enforce-body))
-  "Allows users to create new conditionally allowed parts in the routing.  The current system is not allowed to change the URLs in any way, this may be subject to change."
-  (let ((dir (gensym)))
-    `(defun ,name (,dir)
-       ,documentation
-       (cond ((eql ,dir :assert)
-	      (lambda ,assert-args
-		,@assert-body))
-	     ((eql ,dir :enforce)
-	      (lambda ,enforce-args
-		,@enforce-body))))))
-
-(defmacro defhandler (name documentation ((&rest to-page-args) &body to-page-body) ((&rest to-url-args) &body to-url-body))
-  (let ((dir (gensym)))
-    `(defun ,name (,dir)
-       ,documentation
-       (cond ((eql ,dir :to-page)
-	      (lambda ,to-page-args
-		,@to-page-body))
-	     ((eql ,dir :to-url)
-	      (lambda ,to-url-args
-		,@to-url-body))))))
-
-(defwhen always
-    "Simple when-clause that may be executed in any case"
-  ((item) item)
-  ((item) item))
-(defwhen never
-    "Simple when-clause that may never be executed"
-  ((item) (declare (ignore item)) nil)
-  ((item) (declare (ignore item)) nil))
-
-(defhandles loosely (page)
-    "Allows a page to be linked both through foo and foo/, with foo being the predefined regexp in the routing table"
-  `(,page ("" ,page)))
-
-(defhandles only-when (page condition)
-    "Converts (handles page when condition) to (when condition page), for those that would like one definition above the other."
-  `((when ,condition ,page)))
-
-(defhandler sets
-    "Sets the currently matched url-part to the given variable"
-  ((url-part variable)
-   (declare (special url-variables))
-   (push (cons variable url-part) url-variables))
-  ((url-sections options variables)
-   (let ((var (first variables)))
-     (when (getf options var)
-       (cons (getf options var) (rest url-sections))))))
-
-(defun url-var (variable)
-  "Returns the value of the variable found in the url."
-  (cdr (assoc variable *url-variables*)))
