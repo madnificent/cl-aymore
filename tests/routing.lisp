@@ -40,11 +40,13 @@
   (has-as-url 'welcome "/welcome"))
 
 (deftest stage2tot ()
-  (set-routing-table '(("about" about-overview
+  (set-routing-table '(index
+		       ("about" about-overview
 			("contact" contact)
 			("overview" overview)
 			("status" status))
 		       ("welcome" welcome)))
+  (interconnects 'index "/")
   (interconnects 'about-overview "/about")
   (interconnects 'contact "/about/contact")
   (interconnects 'overview "/about/overview")

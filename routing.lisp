@@ -178,7 +178,11 @@
   (dolist (route *ROUTING-TABLE*)
     (let ((url (search-url route page nil options)))
       (when url
-	(return-from handler-url (format nil "~{~a~^/~}" (reverse url)))))))
+	(return-from handler-url
+	  (if (equal '("") url)
+	      "/"
+	      (format nil "~{~a~^/~}" (reverse url))))))))
+	    
 
 (defun search-url (route page url-sections options)
   "Searches for a url of the given page, for the current (sub) route."
