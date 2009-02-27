@@ -1,4 +1,4 @@
-(in-package :minions.routing)
+(in-package :CLaymore.routing)
 
 (defmacro defhandles (name (base &rest args) documentation &body body)
   "Allows users to create a new clause for the handles expanders.

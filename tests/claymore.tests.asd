@@ -1,16 +1,16 @@
-(defpackage :minions.tests.sysdef
+(defpackage :CLaymore.tests.sysdef
   (:use :common-lisp :asdf))
 
-(in-package :minions.tests.sysdef)
+(in-package :CLaymore.tests.sysdef)
 
-(defsystem :minions.tests
-  :name "Minions - tests"
+(defsystem :CLaymore.tests
+  :name "CLaymore - tests"
   :author "Aad Versteden <madnificent@gmail.com>"
   :version "0"
   :maintainer "Aad Versteden <madnificent@gmail.com>"
   :licence "BSD"
   :description "Website definition system"
-  :depends-on (:minions :stefil)
+  :depends-on (:CLaymore :stefil)
   :components ((:file "packages")
 	       (:file "html"
 		      :depends-on ("packages"))

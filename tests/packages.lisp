@@ -1,12 +1,12 @@
-(defpackage :minions.html.tests
+(defpackage :CLaymore.html.tests
   (:use :common-lisp
-	:minions.html
+	:CLaymore.html
 	:cl-ppcre
 	:stefil)
   (:export :tests))
 
-(defpackage :minions.routing.tests
+(defpackage :CLaymore.routing.tests
   (:use :common-lisp
-	:minions.routing
+	:CLaymore.routing
 	:stefil)
   (:export :tests))

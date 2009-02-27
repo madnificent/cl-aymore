@@ -1,4 +1,4 @@
-(in-package :minions.routing)
+(in-package :CLaymore.routing)
 
 ;; The current idea is to work from the data structure the user has given us.  This means that that data structure will be the internal representation too.
 ;;

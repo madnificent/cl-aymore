@@ -1,6 +1,6 @@
 ;;;; This is the micro HTML-generation-library.  It is possible to make this more efficient by expanding the functions, but that can be implemented later.
 ;;;; TODO: Throw all the existing tags from the xhtml standard in here and implement them
-(in-package :minions.html)
+(in-package :CLaymore.html)
 
 (declaim (inline tagify))
 (defun tagify (keyword options &optional (contentp nil))
@@ -58,19 +58,19 @@
 (defun link-to-page (name page &optional (page-options nil) &rest path-options)
   "Links to the given page"
   (a :href (apply 'build-path
-		  (apply 'minions.routing:handler-url page page-options)
+		  (apply 'CLaymore.routing:handler-url page page-options)
 		  path-options)
      name))
 
 (defun redirect-to-page (page &key (page-options nil) (path-options nil))
   "Redirects to the given page"
   (hunchentoot:redirect (apply 'build-path 
-			       (apply 'minions.routing:handler-url page page-options) 
+			       (apply 'CLaymore.routing:handler-url page page-options) 
 			       path-options)))
 
 (defun button-to (page name url-options key-values)
   "Creates a button to the given page, with the given caption on the button and the given url-options and key-values"
-  (form :method "post" :action (apply 'minions.routing:handler-url page url-options)
+  (form :method "post" :action (apply 'CLaymore.routing:handler-url page url-options)
 	(loop for i from 0 below (length key-values)
 	   by 2
 	   collect
@@ -79,7 +79,7 @@
 
 (defun bttn-to (page button-name &key variable-name (url-options nil))
   "Creates a simple form-button to the given page"
-  (form :method "post" :action (apply 'minions.routing:handler-url page url-options)
+  (form :method "post" :action (apply 'CLaymore.routing:handler-url page url-options)
 	(if variable-name
 	    (input :type "submit" :name variable-name :value button-name)
 	    (input :type "submit" :value button-name))))

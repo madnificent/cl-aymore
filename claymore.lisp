@@ -1,4 +1,4 @@
-(in-package :minions)
+(in-package :CLaymore)
 
 (defparameter *lookup-table* nil)
 

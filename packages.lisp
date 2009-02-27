@@ -3,13 +3,13 @@
   (:export :debug-print
 	   :return-when))
 
-(defpackage :minions
+(defpackage :CLaymore
   (:use :cl :hunchentoot)
   (:export :defpage
 	   :page-path
 	   :param))
 
-(defpackage :minions.routing
+(defpackage :CLaymore.routing
   (:use :common-lisp
 	:hunchentoot
 	:cl-ppcre)
@@ -36,10 +36,10 @@
 	   :def-identification-handler
 	   :identifies-function))
 	   
-(defpackage minions.html
+(defpackage CLaymore.html
   (:use :common-lisp
-	:minions
-	:minions.routing)
+	:CLaymore
+	:CLaymore.routing)
   (:export :html 
 	   :head 
 	   :title 

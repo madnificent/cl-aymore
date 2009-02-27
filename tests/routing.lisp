@@ -1,14 +1,14 @@
-(in-package :minions.routing.tests)
+(in-package :CLaymore.routing.tests)
 
 (defsuite tests)
 (in-suite tests)
 
 (deftest has-as-url (page url &key (url-options nil))
   (util:debug-print page url url-options)
-  (is (string= (apply 'minions.routing:handler-url page url-options) url)))
+  (is (string= (apply 'CLaymore.routing:handler-url page url-options) url)))
 
 (deftest has-as-page (url page)
-  (is (eql (minions.routing:page-handler url) page)))
+  (is (eql (CLaymore.routing:page-handler url) page)))
 
 (deftest interconnects (page route &key (url-options))
   (format T "--~%")
@@ -17,7 +17,7 @@
 	   (has-as-page route page))))
 
 (deftest identified-variable (key var)
-  (is (equal (minions.routing:url-var key) var)))
+  (is (equal (CLaymore.routing:url-var key) var)))
 
 (deftest stage1 ()
   (set-routing-table '((""

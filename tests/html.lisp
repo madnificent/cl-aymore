@@ -1,4 +1,4 @@
-(in-package :minions.html.tests)
+(in-package :CLaymore.html.tests)
 
 (defsuite tests)
 (in-suite tests)
