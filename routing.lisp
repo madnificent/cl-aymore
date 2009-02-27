@@ -6,7 +6,8 @@
 ;; h2. stage 1
 ;;  Pages will be identifyable by the internal representation.  Only static pages will be considered.  That means that we can render a page from the hunchentoot.
 ;;  example
-;; (set-routing-table '(("about" about-overview
+;; (set-routing-table '(""
+;;                      ("about" about-overview
 ;;                       ("contact" contact)
 ;;                       ("overview" overview)
 ;;                       ("status" status))
@@ -20,7 +21,8 @@
 ;;
 ;; h2. stage 3
 ;;  Pages will be able to parse the content in a URL, and this will allow them to define variables that the user can access.
-;; (set-routing-table '(("posts" posts)
+;; (set-routing-table '(""
+;;                       ("posts" posts)
 ;;                       ("show"
 ;;                        ("\\d+" (handler sets post-id)
 ;;                                show-post)))))
@@ -34,15 +36,17 @@
 ;; h2. stage 5
 ;;  Pages can contain abbreviations (this is the handles clause)
 ;; example:
-;;  (set-routing-table '(("posts" (handles posts loosely)))
+;;  (set-routing-table '("" ("posts" (handles posts loosely)))
 ;;  expands to
-;;  (set-routing-table '(("posts" posts
+;;  (set-routing-table '(""
+;;                       ("posts" posts
 ;;                        ("" posts))))
 ;;
 ;; h2. stage 6
 ;;  Pages can define conditional evaluation (when (condition) action).  Both (when ...) and (handles action when (condition)) should work.
 ;; example:
-;;  (set-routing-table '(("posts" (handles post-list loosely)
+;;  (set-routing-table '(""
+;;                       ("posts" (handles post-list loosely)
 ;;                        ("\\d+" (handler sets post-id)
 ;;                         (when get-request show-post)
 ;;                         (when put-request create-post)
@@ -59,8 +63,8 @@
 ;;                     ("\\d+" (handler sets user-id)
 ;;                      (handles show-user when get-request)
 ;;                      (handles update-user when post-request))))
-;;  (set-routing-table '(("" index
-;;                        (subroute users for "users")))))
+;;  (set-routing-table '("" index
+;;                       (subroute users for "users")))))
 ;;
 ;; h2. stage 8
 ;;  Operations for managing the routing table.  These operations are only basic, as the more complicated behavior can be done manually (readable-table) gives you a table that is editable.  Manipulating that list (which is easy) allows the system to be reconfigured based on the user's needs.
@@ -80,8 +84,9 @@
 (setf hunchentoot:*dispatch-table*
       (list (create-prefix-dispatcher "" 'hunchentoot-get-handler)))
 
-(defun set-routing-table (content)
-  (setf *ROUTING-TABLE* (expand-handles-cases content)))
+(defun set-routing-table (routes)
+  "Sets the routing table to the given route"
+  (setf *ROUTING-TABLE* (expand-handles-cases (list (concatenate 'list '("") routes)))))
 
 (defun hunchentoot-get-handler ()
   (declare (special hunchentoot:*request*))
