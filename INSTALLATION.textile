@@ -1,0 +1,34 @@
+h1. Installation manual for cl-aymore.
+
+This is the installation manual for cl-aymore.  It explains the complicated setup which will give you a persistency backend too.
+
+The guide is rather short, as the first part of it points to the installation manual of bknr.
+
+h2. prerequisites
+
+You'll need the following software:
+
+* a lisp (development is generally done in sbcl)
+* svn to download the bknr repository
+* git to downlead the cl-aymore repository (it seems to be fetchable as a tarball through github too)
+
+h2. install bknr
+
+We'll want persistency, so it'd be best to install bknr.  They have a briliant guide at their "wiki":http://bknr.net/trac/wiki/GettingStarted
+
+h2. install cl-aymore
+
+Go to the directory where you want to install claymore:
+
+<code>
+cd /path/to/
+git clone git://github.com/madnificent/cl-aymore.git
+</code>
+
+If you have traversed the bknr installation, you should have an edit in your .sbclrc (or any other initialisation file for your lisp).  Because we need to ensure our lisp knows how to load cl-aymore, we'll need to add an equivalent entry to thi initialisation-file.
+
+<code>
+echo "(setup-registry (merge-pathnames #p\"path/to/claymore/\" (user-homedir-pathname)))"
+</code>
+
+That was it, happy hacking!
