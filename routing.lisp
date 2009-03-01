@@ -6,8 +6,7 @@
 ;; h2. stage 1
 ;;  Pages will be identifyable by the internal representation.  Only static pages will be considered.  That means that we can render a page from the hunchentoot.
 ;;  example
-;; (set-routing-table '(""
-;;                      ("about" about-overview
+;; (set-routing-table '(("about" about-overview
 ;;                       ("contact" contact)
 ;;                       ("overview" overview)
 ;;                       ("status" status))
@@ -21,8 +20,7 @@
 ;;
 ;; h2. stage 3
 ;;  Pages will be able to parse the content in a URL, and this will allow them to define variables that the user can access.
-;; (set-routing-table '(""
-;;                       ("posts" posts)
+;; (set-routing-table '(("posts" posts)
 ;;                       ("show"
 ;;                        ("\\d+" (handler sets post-id)
 ;;                                show-post)))))
@@ -36,17 +34,15 @@
 ;; h2. stage 5
 ;;  Pages can contain abbreviations (this is the handles clause)
 ;; example:
-;;  (set-routing-table '("" ("posts" (handles posts loosely)))
+;;  (set-routing-table '(("posts" (handles posts loosely)))
 ;;  expands to
-;;  (set-routing-table '(""
-;;                       ("posts" posts
+;;  (set-routing-table '(("posts" posts
 ;;                        ("" posts))))
 ;;
 ;; h2. stage 6
 ;;  Pages can define conditional evaluation (when (condition) action).  Both (when ...) and (handles action when (condition)) should work.
 ;; example:
-;;  (set-routing-table '(""
-;;                       ("posts" (handles post-list loosely)
+;;  (set-routing-table '(("posts" (handles post-list loosely)
 ;;                        ("\\d+" (handler sets post-id)
 ;;                         (when get-request show-post)
 ;;                         (when put-request create-post)
@@ -63,10 +59,10 @@
 ;;                     ("\\d+" (handler sets user-id)
 ;;                      (handles show-user when get-request)
 ;;                      (handles update-user when post-request))))
-;;  (set-routing-table '("" index
+;;  (set-routing-table '(index
 ;;                       (subroute users for "users")))))
 ;;
-;; h2. stage 8
+;; h2. stage 8 (currently unimplemented)
 ;;  Operations for managing the routing table.  These operations are only basic, as the more complicated behavior can be done manually (readable-table) gives you a table that is editable.  Manipulating that list (which is easy) allows the system to be reconfigured based on the user's needs.
 ;; example:
 ;;  (move "foo/bar" "foo/baz")
@@ -136,11 +132,11 @@
 (defun page-handler (url)
   "Finds the handler for a page in the current routing table."
   (with-parsing-environment
-      (let ((parts (cl-ppcre:split (string +URLSPLIT+) url)))
-	(dolist (route *ROUTING-TABLE*)
-	  (let ((handler (search-handler route parts)))
-	    (when handler
-	      (return-from page-handler handler)))))))
+    (let ((parts (map 'list 'hunchentoot:url-decode (cl-ppcre:split (string +URLSPLIT+) url))))
+      (dolist (route *ROUTING-TABLE*)
+	(let ((handler (search-handler route parts)))
+	  (when handler
+	    (return-from page-handler handler)))))))
 
 (defun search-handler (route url-sections)
   "Searches for a handler for the current page in the currently known urls."
@@ -150,26 +146,27 @@
       (maplist
        (lambda (unhandled-routing-directives)
 	 (let ((item (first unhandled-routing-directives)))
-	   (cond (;; handler-function
+	   (cond ( ;; handler-function
 		  (or (symbolp item) (functionp item))
 		  (when (null (rest url-sections))
 		    (setf *url-variables* url-variables) ;; storing the currently valid fetched variables (should be done in some sort of handler)
 		    (return-from search-handler item)))
-		 (;; inline subroute
+		 ( ;; inline subroute
 		  (and (listp item) (stringp (first item)))
 		  (let ((handler (search-handler item (rest url-sections))))
 		    (when handler
 		      (return-from search-handler handler))))
-		 (;; subroute case
+		 ( ;; subroute case
 		  (and (listp item) (eq (first item) 'subroute))
 		  (util:return-when search-handler (search-handler `(,(fourth item) ,@(subroute (second item))) (rest url-sections))))
-		 (;; when case
+		 ( ;; when case
 		  (and (null (rest url-sections)) (listp item) (eq (first item) 'when))
 		  (util:return-when search-handler (apply (funcall (second item) :assert) (rest (rest item)))))
-		 (;; handler case
+		 ( ;; handler case
 		  (and (listp item) (eq (first item) 'handler))
-		  (apply (funcall (second item) :to-page) (first url-sections) (rest (rest item)))
-		  (util:return-when search-handler (search-handler `(,(first route) ,@(rest unhandled-routing-directives)) url-sections))))))
+		  (if (apply (funcall (second item) :to-page) (first url-sections) (rest (rest item)))
+		      (util:return-when search-handler (search-handler `(,(first route) ,@(rest unhandled-routing-directives)) url-sections))
+		      (return-from search-handler nil))))))
        (rest route))
       nil)))
 
@@ -181,30 +178,34 @@
 	(return-from handler-url
 	  (if (equal '("") url)
 	      "/"
-	      (format nil "~{~a~^/~}" (reverse url))))))))
+	      (let ((foo (format nil "~{~A~^/~}" (reverse (map 'list 'hunchentoot:url-encode url)))))
+		(util:debug-print foo)
+		foo)))))))
 	    
 
 (defun search-url (route page url-sections options)
   "Searches for a url of the given page, for the current (sub) route."
   (let ((url-sections (cons (first route) url-sections))) ;; last part of the url is the first item in this list
     (dolist (item (rest route))
-      (cond (;; handler function
+      (cond ( ;; handler function
 	     (or (symbolp item) (functionp item))
 	     (when (eql page item)
 	       (return-from search-url url-sections)))
-	    (;; inline subroute
+	    ( ;; inline subroute
 	     (and (listp item) (stringp (first item)))
 	     (util:return-when search-url (search-url item page url-sections options)))
-	    (;; subroute case
+	    ( ;; subroute case
 	     (and (listp item) (eq (first item) 'subroute))
 	     (util:return-when search-url (search-url `(,(fourth item) ,@(subroute (second item))) page url-sections options)))
-	    (;; when case
+	    ( ;; when case
 	     (and (listp item) (eq (first item) 'when))
 	     (when (eql (apply (funcall (second item) :enforce) (rest (rest item))) page)
 	       (return-from search-url url-sections)))
-	    (;; handler case
+	    ( ;; handler case
 	     (and (listp item) (eq (first item) 'handler))
 	     (let ((new-url-sections (funcall (funcall (second item) :to-url) url-sections options (rest (rest item)))))
 	       (if new-url-sections
-		   (setf url-sections new-url-sections)
+		   (progn
+		     (util:debug-print url-sections new-url-sections)
+		     (setf url-sections new-url-sections))
 		   (return-from search-url nil))))))))

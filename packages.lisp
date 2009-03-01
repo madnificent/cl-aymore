@@ -62,6 +62,7 @@
 	   :b :i
 	   :a
 	   :br
+	   :hr
 	   :form
 	   :input
 	   :textarea

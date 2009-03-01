@@ -34,20 +34,20 @@
 (defwhen post-request
     "Evaluates when the current request was a post-request"
   ((item) 
-   (warn 'simple-warning "Creating a url for a POST-request, even though I have no idea whether or not it is one.~%")
-   item)
+   (when (eq (hunchentoot:request-method*) :post)
+     item))
   ((item) 
-   (declare (ignore item))
-   (eq (hunchentoot:request-method*) :post)))
+   (warn 'simple-warning :format-control "Creating a url for a POST-request, even though I have no idea whether or not it is one.~%")
+   item))
 
 (defwhen get-request
     "Evaluates when the current request was a get-request"
   ((item)
-   (warn 'simple-warning "Creating a url for a GET-request, even though I have no idea whether or not it is one.~%")
-   item)
+   (when (eq (hunchentoot:request-method*) :get)
+     item))
   ((item)
-   (declare (ignore item))
-   (eq (hunchentoot:request-method*) :get)))
+   (warn 'simple-warning :format-control "Creating a url for a GET-request, even though I have no idea whether or not it is one.~%")
+   item))
 
 (defwhen always
     "Simple when-clause that may be executed in any case"
@@ -88,7 +88,6 @@
 (defmacro def-identification-handler (name object->url-section url-section->object)
   "This creates an 'identifies <var> as <value>' handler that can be used in routes.
 In essence, this allows you to create a simple mapping from a data-structure to a fully qualified name that can then be used in the url.
-
 The general idea is to allow you to say (def-identification-handler user 'nick 'find-user-by-nick) to add this handler to the handlers currently known by the handler identifies.  
 Which will make the url understand (handler identifies user as my-variable).  That will set the the my-variable as a url-variable to the value of the user."
   (let ((gname (gensym)))
@@ -111,6 +110,7 @@ This is a setfable place, but you may prefer to use the def-identification-handl
   ((url-part name as variable)
    (declare (special url-variables)
 	    (ignore as))
+   (hunchentoot:log-message :info "Identifying ~A as ~A from ~A" name variable url-part)
    (let ((object (funcall (identifies-function name :u->o) url-part)))
      (when object
        (push (cons variable object) url-variables))))

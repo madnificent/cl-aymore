@@ -5,10 +5,13 @@
 (declaim (inline tagify))
 (defun tagify (keyword options &optional (contentp nil))
   "Creates the printed tag for the given keyword"
-  (if contentp
-      (values (format nil "<~A~{ ~A=\"~A\"~}>" keyword options)
-	      (format nil "</~A>" keyword))
-      (format nil "<~A ~{~A=~A ~}/>" keyword options)))
+  (let ((lowered-key (string-downcase (string keyword)))
+	(lowered-options (loop for (k v) on options by #'cddr collect
+			      `(,(string-downcase (string k)) ,v))))
+    (if contentp
+	(values (format nil "<~A~{ ~{~A=\"~A\"~}~}>" lowered-key lowered-options)
+		(format nil "</~A>" lowered-key))
+	(format nil "<~A~{ ~{~A=\"~A\"~}~} />" lowered-key lowered-options))))
 
 (defun htmlify (list)
   "Transforms a sexp to an html document."
@@ -27,9 +30,13 @@
   (labels ((key-vals (list) 
 	     (let ((content (rest list))
 		   (keys nil))
-	       (loop while (keywordp (first content))
-		  do (progn (setf keys (concatenate 'list keys (list (first content) (second content))))
-			    (setf content (rest (rest content)))))
+	       (loop while (keywordp (first content)) do 
+		    (progn
+		      (setf keys 
+			    (concatenate 'list
+					 keys
+					 (list (first content) (second content))))
+		      (setf content (rest (rest content)))))
 	       (values keys content))))
     (multiple-value-bind (keys content)
 	(key-vals list)
@@ -37,19 +44,19 @@
 	  (tagify (first list) keys content)
 	(if end-tag
 	    (format nil "~A~{~A~}~A" 
-		    (string-downcase (string start-tag))
+		    start-tag
 		    (map 'list (lambda (x)
 				 (if (stringp x)
 				     x
 				     (htmlify x)))
 			 content)
-		    (string-downcase (string end-tag)))
+		    end-tag)
 	    start-tag)))))
 
 ;; The following makes it easy to define new tags, yet it does not yet make it efficient.
 ;; It does, however, give us a place in which we may macro-expand or compiler-macro-expand to precomputed everything we know already
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (dolist (tag '(html head title body h1 h2 h3 h4 h5 h6 table tr td p div ul ol li span strong a br form input textarea style b i em hidden))
+  (dolist (tag '(html head title body h1 h2 h3 h4 h5 h6 table tr td p div ul ol li span strong a br hr form input textarea style b i em hidden))
     (eval `(declaim (inline ,tag)))
     (eval `(defun ,tag (&rest tag-data)
 	     ;;(format nil "TAG :: ~A." (nstring-downcase (string (quote ,tag))))
@@ -57,10 +64,12 @@
 
 (defun link-to-page (name page &optional (page-options nil) &rest path-options)
   "Links to the given page"
-  (a :href (apply 'build-path
-		  (apply 'CLaymore.routing:handler-url page page-options)
-		  path-options)
-     name))
+  (let ((hurl (apply 'build-path 
+		     (apply 'CLaymore.routing:handler-url page page-options)
+		     path-options)))
+    (util:debug-print hurl)
+    (a :href hurl
+       name)))
 
 (defun redirect-to-page (page &key (page-options nil) (path-options nil))
   "Redirects to the given page"
@@ -86,6 +95,7 @@
 
 (defun build-path (path &rest options)
   "Creates a path for a page with the given key-values options"
+  (util:debug-print path options)
   (format nil "~A~@[?~]~1@*~{~A=~A~^&~}" path options))
 
 ;;  (format nil "~A~@[?~]~:*~{~A=~A~^&~}" path options))  ;; this would be a better option
