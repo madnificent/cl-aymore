@@ -17,4 +17,5 @@
 	       (:file "claymore" :depends-on ("packages"))
 	       (:file "routing" :depends-on ("claymore" "helpers" "packages"))
 	       (:file "routing.extensions" :depends-on ("routing"))
-	       (:file "html" :depends-on ("claymore" "packages"))))
+	       (:file "html" :depends-on ("claymore" "packages"))
+	       (:file "html.extensions" :depends-on ("html"))))
