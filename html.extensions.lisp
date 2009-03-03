@@ -2,7 +2,6 @@
 
 (defun build-path (path &rest options)
   "Creates a path for a page with the given key-values options"
-  (util:debug-print path options)
   (format nil "~A~@[?~]~1@*~{~A=~A~^&~}" path options))
 ;;  (format nil "~A~@[?~]~:*~{~A=~A~^&~}" path options))  ;; this would be a better option
 ;; the if-construct would be understandable, yet I seem to like the complicated format call for now.
@@ -16,7 +15,6 @@
   (let ((hurl (apply 'build-path 
 		     (apply 'CLaymore.routing:handler-url page page-options)
 		     path-options)))
-    (util:debug-print hurl)
     (a :href hurl
        name)))
 
@@ -42,3 +40,20 @@
 	    (input :type "submit" :name variable-name :value button-name)
 	    (input :type "submit" :value button-name))))
 
+;;;;;;;;;;;;;;;
+;; form helpers
+
+(defun text-field (var print-varname? &rest options)
+  (if print-varname?
+      (list (strong var)
+	    (apply 'input `(:type "text" :name ,var ,@options)))
+      (apply 'input `(:type "text" :name ,var ,@options))))
+
+(defun text-area (var print-varname? content &rest options)
+  (if print-varname?
+      (list (strong var)
+	    (apply 'textarea `(:name ,var ,@options ,@(or content '("")))))
+      (apply 'textarea `(:name ,var ,@options ,@(or content '(""))))))
+
+(defun submit-button (&rest options)
+  (apply 'input `(:type "submit" ,@options)))

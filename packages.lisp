@@ -73,4 +73,7 @@
 	   :bttn-to
 	   :link-to-page
 	   :redirect-to-page
-	   :build-path))
+	   :build-path
+	   :text-field
+	   :text-area
+	   :submit-button))
