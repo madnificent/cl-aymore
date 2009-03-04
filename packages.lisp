@@ -27,6 +27,7 @@
 	   :sets
 	   :url-var
 	   :defhandles
+	   :defwhen
 	   :handles
 	   :loosely
 	   :subroute
@@ -50,7 +51,7 @@
 	   :h4 
 	   :h5 
 	   :h6
-	   :table :tr :td
+	   :table :tr :td :tr
 	   :p 
 	   :div 
 	   :ul
@@ -67,7 +68,8 @@
 	   :input
 	   :textarea
 	   :style
-	   :hidden)
+	   :hidden
+	   :label)
   (:export :htmlify
 	   :button-to
 	   :bttn-to
