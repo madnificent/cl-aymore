@@ -6,7 +6,6 @@
   `(defun ,name (,base ,@args)
      ,documentation
      ,@body))
-
 (defmacro defwhen (name documentation ((&rest assert-args) &body assert-body) ((&rest enforce-args) &body enforce-body))
   "Allows users to create new conditionally allowed parts in the routing.  The current system is not allowed to change the URLs in any way, this may be subject to change."
   (let ((dir (gensym)))
@@ -33,30 +32,30 @@
 ;; when-handlers
 (defwhen post-request
     "Evaluates when the current request was a post-request"
-  ((item) 
+  ((&rest items) 
    (when (eq (hunchentoot:request-method*) :post)
-     item))
-  ((item) 
+     items))
+  ((&rest items)
    (warn 'simple-warning :format-control "Creating a url for a POST-request, even though I have no idea whether or not it is one.~%")
-   item))
+   items))
 
 (defwhen get-request
     "Evaluates when the current request was a get-request"
-  ((item)
+  ((&rest items)
    (when (eq (hunchentoot:request-method*) :get)
-     item))
-  ((item)
+     items))
+  ((&rest items)
    (warn 'simple-warning :format-control "Creating a url for a GET-request, even though I have no idea whether or not it is one.~%")
-   item))
+   items))
 
 (defwhen always
     "Simple when-clause that may be executed in any case"
-  ((item) item)
-  ((item) item))
+  ((&rest items) items)
+  ((&rest items) items))
 (defwhen never
     "Simple when-clause that may never be executed"
-  ((item) (declare (ignore item)) nil)
-  ((item) (declare (ignore item)) nil))
+  ((&rest items) (declare (ignore items)) nil)
+  ((&rest items) (declare (ignore items)) nil))
 
 ;; handles expanders
 (defhandles loosely (page)

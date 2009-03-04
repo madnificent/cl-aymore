@@ -93,7 +93,7 @@
 ;;;; subroute definition
 (defun subroute (name)
   "Returns the subroute defined by <name>"
-  (gethash name *subroutes*))
+  (expand-handles-cases (gethash name *subroutes*)))
 (defun set-subroute (name route)
   (setf (gethash name *subroutes*) route))
 (defsetf subroute set-subroute)
@@ -135,11 +135,13 @@
     (let ((parts (map 'list 'hunchentoot:url-decode (cl-ppcre:split (string +URLSPLIT+) url))))
       (dolist (route *ROUTING-TABLE*)
 	(let ((handler (search-handler route parts)))
+	  (hunchentoot:log-message :page-handler "Got page handler ~A" handler)
 	  (when handler
 	    (return-from page-handler handler)))))))
 
 (defun search-handler (route url-sections)
   "Searches for a handler for the current page in the currently known urls."
+  (hunchentoot:log-message :trace-search-handler "search-handler ~A ~A" route url-sections)
   (with-local-parsing-environment
     (when (cl-ppcre:scan (concatenate 'string "^" (first route) "$") (first url-sections))
       ;; moving to an iterative solution
@@ -160,8 +162,13 @@
 		  (and (listp item) (eq (first item) 'subroute))
 		  (util:return-when search-handler (search-handler `(,(fourth item) ,@(subroute (second item))) (rest url-sections))))
 		 ( ;; when case
-		  (and (null (rest url-sections)) (listp item) (eq (first item) 'when))
-		  (util:return-when search-handler (apply (funcall (second item) :assert) (rest (rest item)))))
+		  (and (and (listp item) (eq (first item) 'when)))
+		  (let ((new-route (apply (funcall (second item) :assert) (rest (rest item)))))
+		    (hunchentoot:log-message :info "new-route is ~A which gives (search-handler ~A ~A)" new-route `(,(first route) ,@new-route) url-sections)
+		    (when new-route
+		      (util:return-when search-handler 
+			(search-handler `(,(first route) ,@new-route)
+					url-sections)))))
 		 ( ;; handler case
 		  (and (listp item) (eq (first item) 'handler))
 		  (if (apply (funcall (second item) :to-page) (first url-sections) (rest (rest item)))
@@ -199,8 +206,11 @@
 	     (util:return-when search-url (search-url `(,(fourth item) ,@(subroute (second item))) page url-sections options)))
 	    ( ;; when case
 	     (and (listp item) (eq (first item) 'when))
-	     (when (eql (apply (funcall (second item) :enforce) (rest (rest item))) page)
-	       (return-from search-url url-sections)))
+	     (let ((new-route (apply (funcall (second item) :enforce) (rest (rest item)))))
+	       (util:return-when search-url
+		 (search-url `(,(first route) ,@new-route) page (rest url-sections) options))))
+;	     (when (eql (apply (funcall (second item) :enforce) (rest (rest item))) page)
+;	       (return-from search-url url-sections)))
 	    ( ;; handler case
 	     (and (listp item) (eq (first item) 'handler))
 	     (let ((new-url-sections (funcall (funcall (second item) :to-url) url-sections options (rest (rest item)))))
