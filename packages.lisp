@@ -14,6 +14,7 @@
 	:hunchentoot
 	:cl-ppcre)
   (:export :set-routing-table
+	   :add-static-routing-dispatcher
 	   :*static-files-path*
 	   :*url-variables*
 	   :url-variables
@@ -69,7 +70,10 @@
 	   :textarea
 	   :style
 	   :hidden
-	   :label)
+	   :label
+	   :img
+	   :script
+	   :link)
   (:export :htmlify
 	   :button-to
 	   :bttn-to

@@ -36,7 +36,7 @@
    (when (eq (hunchentoot:request-method*) :post)
      items))
   ((&rest items)
-   (warn 'simple-warning :format-control "Creating a url for a POST-request, even though I have no idea whether or not it is one.~%")
+   (warn 'simple-warning :format-control "Creating a url for a POST-request, even though I have no idea whether or not it is one.")
    items))
 
 (defwhen get-request
@@ -45,7 +45,7 @@
    (when (eq (hunchentoot:request-method*) :get)
      items))
   ((&rest items)
-   (warn 'simple-warning :format-control "Creating a url for a GET-request, even though I have no idea whether or not it is one.~%")
+   (warn 'simple-warning :format-control "Creating a url for a GET-request, even though I have no idea whether or not it is one.")
    items))
 
 (defwhen always

@@ -56,7 +56,7 @@
 ;; The following makes it easy to define new tags, yet it does not yet make it efficient.
 ;; It does, however, give us a place in which we may macro-expand or compiler-macro-expand to precomputed everything we know already
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (dolist (tag '(html head title body h1 h2 h3 h4 h5 h6 table tr th td p div ul ol li span strong a br hr form input textarea style b i em hidden label))
+  (dolist (tag '(html head title body h1 h2 h3 h4 h5 h6 table tr th td p div ul ol li span strong a br hr form input textarea style b i em hidden label img script link))
     (eval `(declaim (inline ,tag)))
     (eval `(defun ,tag (&rest tag-data)
 	     ;;(format nil "TAG :: ~A." (nstring-downcase (string (quote ,tag))))

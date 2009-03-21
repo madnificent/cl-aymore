@@ -74,11 +74,24 @@
 (defconstant +URLSPLIT+ #\/)
 
 (defvar *ROUTING-TABLE* nil)
+(defvar *STATIC-DIRECTORIES* nil)
 (defvar *subroutes* (make-hash-table))
 
 ;;;; Stuff that needs cleaning up
-(setf hunchentoot:*dispatch-table*
-      (list (create-prefix-dispatcher "" 'hunchentoot-get-handler)))
+(defun set-hunchentoot-routing-table ()
+  "Sets hunchentoots routing table, so it adheres to the data we set"
+  (let ((hunchentoot-routes (list (create-prefix-dispatcher "" 'hunchentoot-get-handler)))) ; the explicit routing defined by claymore.routing
+    (loop for (base-path settings) on *STATIC-DIRECTORIES* by #'cddr do
+	 (push (apply 'hunchentoot:create-folder-dispatcher-and-handler `(,base-path ,@settings))
+	       hunchentoot-routes))
+    (setf hunchentoot:*dispatch-table* hunchentoot-routes)))
+(set-hunchentoot-routing-table)
+
+(defun add-static-routing-dispatcher (uri-prefix base-path &optional content-type)
+  "Adds a handling system for some static content"
+  (setf (getf *STATIC-DIRECTORIES* uri-prefix)
+	(list base-path content-type))
+  (set-hunchentoot-routing-table))
 
 (defun set-routing-table (routes)
   "Sets the routing table to the given route"
@@ -135,13 +148,11 @@
     (let ((parts (map 'list 'hunchentoot:url-decode (cl-ppcre:split (string +URLSPLIT+) url))))
       (dolist (route *ROUTING-TABLE*)
 	(let ((handler (search-handler route parts)))
-	  (hunchentoot:log-message :page-handler "Got page handler ~A" handler)
 	  (when handler
 	    (return-from page-handler handler)))))))
 
 (defun search-handler (route url-sections)
   "Searches for a handler for the current page in the currently known urls."
-  (hunchentoot:log-message :trace-search-handler "search-handler ~A ~A" route url-sections)
   (with-local-parsing-environment
     (when (cl-ppcre:scan (concatenate 'string "^" (first route) "$") (first url-sections))
       ;; moving to an iterative solution
@@ -164,7 +175,6 @@
 		 ( ;; when case
 		  (and (and (listp item) (eq (first item) 'when)))
 		  (let ((new-route (apply (funcall (second item) :assert) (rest (rest item)))))
-		    (hunchentoot:log-message :info "new-route is ~A which gives (search-handler ~A ~A)" new-route `(,(first route) ,@new-route) url-sections)
 		    (when new-route
 		      (util:return-when search-handler 
 			(search-handler `(,(first route) ,@new-route)
