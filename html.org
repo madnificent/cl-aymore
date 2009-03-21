@@ -1,0 +1,34 @@
+* This file explains how the HTML generator works
+
+The idea behind the HTML-generation library was to keep it as unobtrusive as possible to the coder that uses it.  In order to do that we have chosen for a system that is clear, but with as little clutter as possible.
+
+** The basics
+
+In the basis of this all, there lies a simple system that allows you to define HTML-tags, as if they were functions.
+
+For instance:
+  (div (p "my paragraph"))
+will expand to
+  <div><p>my paragraph</p></div>
+
+** Attributes
+
+Tags can have attributes, these aren't ignored in the current generation-scheme.  They work by adding keywords to the contents of a tag, right after the name of a tag.
+
+For instance:
+  (div :class "foobar" (p "my paragraph"))
+will expand to
+  <div class="foobar"><p>my paragraph</p></div>
+
+** Lists
+
+It is sometimes useful to allow yourself to enter a list of data within a tag.  It is clear that this list of strings (or perhaps functions that create strings) should simply be concatenated to each other.  For this purpose, it is allowed to supply lists to the system, which will be transformed unobtrusively.
+
+For instance:
+  (div :class "foobar"
+    (ul
+      (loop for item in '("foo" "bar" "baz") collect (li item))))
+will expand into:
+  <div class="foobar"><ul><li>foo</li><li>bar</li><li>baz</li></ul></div>
+
+This system may not allow you to expand a list of key/value pairs to a tag.  If you want to do that, you'll still need to use #'apply .
