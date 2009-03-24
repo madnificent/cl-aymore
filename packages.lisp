@@ -42,38 +42,78 @@
   (:use :common-lisp
 	:CLaymore
 	:CLaymore.routing)
-  (:export :html 
-	   :head 
-	   :title 
-	   :body 
-	   :h1 
-	   :h2 
-	   :h3 
-	   :h4 
-	   :h5 
-	   :h6
-	   :table :tr :td :tr
-	   :p 
-	   :div 
-	   :ul
-	   :ol
-	   :li
-	   :span 
-	   :strong
-	   :em
-	   :b :i
-	   :a
+  (:export :a ;; strict xhtml tags
+	   :abbr
+	   :acronym
+	   :address
+	   :area
+	   :b
+	   :base
+	   :bdo
+	   :big
+	   :blockquote
+	   :body
 	   :br
-	   :hr
+	   :button
+	   :caption
+	   :cite
+	   :code
+	   :col
+	   :colgroup
+	   :dd
+	   :del
+	   :div
+	   :dfn
+	   :dl
+	   :dt
+	   :em
+	   :fieldset
 	   :form
-	   :input
-	   :textarea
-	   :style
-	   :hidden
-	   :label
+	   :h1
+	   :head
+	   :hr
+	   :html
+	   :i
 	   :img
+	   :input
+	   :ins
+	   :kbd
+	   :label
+	   :legend
+	   :li
+	   :link
+	   :image-map ; yes, this is somewhat dirty, it is actually the map tag
+	   :meta
+	   :noscript
+	   :object
+	   :ol
+	   :optgroup
+	   :option
+	   :p
+	   :param
+	   :pre
+	   :q
+	   :samp
 	   :script
-	   :link)
+	   :select
+	   :small
+	   :span
+	   :strong
+	   :style
+	   :sub
+	   :sup
+	   :table
+	   :tbody
+	   :td
+	   :textarea
+	   :tfoot
+	   :th
+	   :thead
+	   :title
+	   :tr
+	   :tt
+	   :ul
+	   :var)
   (:export :htmlify
 	   :button-to
 	   :bttn-to

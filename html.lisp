@@ -5,11 +5,25 @@
 ;; The following makes it easy to define new tags, yet it does not yet make it efficient.
 ;; It does, however, give us a place in which we may macro-expand or compiler-macro-expand to precomputed everything we know already
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (dolist (tag '(html head title body h1 h2 h3 h4 h5 h6 table tr th td p div ul ol li span strong a br hr form input textarea style b i em hidden label img script link))
+  (dolist (tag '(a abbr acronym address area b base bdo big blockquote body br button caption cite code col colgroup dd del div dfn dl dt em fieldset form h1 head hr html i img input ins kbd label legend li link meta noscript object ol optgroup option p param pre q samp script select small span strong style sub sup table tbody td textarea tfoot th thead title tr tt ul var))
     (eval `(defun ,tag (&rest tag-data)
 	     (multiple-value-bind (name attrs contents)
 		 (split-name-attr-contents ',tag tag-data)
 	       (mktag name attrs contents))))))
+
+;;;;;;;;;;;;;;
+;; dirty cases
+(defun !-- (&rest comments)
+  "(x)html comment"
+  (format nil "<!--~A-->" (apply 'strcon comments)))
+(defun !doctype (string)
+  "Please expect this to change in the future, as it should accept a keyword for the most common doctypes"
+  (format nil "<!DOCTYPE ~A>" string))
+(defun image-map (&rest tag-data)
+  "map didn't fit into common-lisp nicely.  Since it isn't used too widely, it has been put into a differently named function (just hope this doesn't surprise too many people)."
+  (multiple-value-bind (name attrs contents)
+      (split-name-attr-contents 'map tag-data)
+    (mktag name attrs contents)))
 
 ;;;;;;;;;;;;;;;;;;
 ;; the actual code
@@ -25,15 +39,6 @@
 	     (return-from eat-attributes)))
     (values tag key-vals content)))
     
-(define-compiler-macro strcon (&rest args)
-  (let ((func (compiler-macro-function 'strcon)))
-    (cond ((eql (first args) 'strcon)
-	   (apply func (rest (first args)) (rest args)))
-	  ((and (stringp (first args)) (stringp (first (apply func (rest args)))))
-	   `(strcon ,(concatenate 'string (first args) (first (apply func (rest args)))) ,@(rest (apply func (rest args)))))
-	  (T
-	   `(strcon ,@args)))))
-
 (defun strcon (&rest args)
   "Concatenates strings together"
   (apply 'concatenate 
