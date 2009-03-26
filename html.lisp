@@ -5,11 +5,16 @@
 ;; The following makes it easy to define new tags, yet it does not yet make it efficient.
 ;; It does, however, give us a place in which we may macro-expand or compiler-macro-expand to precomputed everything we know already
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (dolist (tag '(a abbr acronym address area b base bdo big blockquote body br button caption cite code col colgroup dd del div dfn dl dt em fieldset form h1 head hr html i img input ins kbd label legend li link meta noscript object ol optgroup option p param pre q samp script select small span strong style sub sup table tbody td textarea tfoot th thead title tr tt ul var))
+  (dolist (tag '(a abbr acronym address area b base bdo big blockquote body br button caption cite code col colgroup dd del div dfn dl dt em fieldset form h1 head hr html i img input ins kbd label legend li link meta noscript object ol optgroup option p param pre q samp script select small span strong style sub sup table tbody td textarea tfoot th thead title tr tt ul))
     (eval `(defun ,tag (&rest tag-data)
 	     (multiple-value-bind (name attrs contents)
 		 (split-name-attr-contents ',tag tag-data)
-	       (mktag name attrs contents))))))
+	       (mktag name attrs contents))))
+    (eval `(define-compiler-macro ,tag (&rest tag-data)
+	     (multiple-value-bind (name attrs contents)
+		 (split-name-attr-contents ',tag tag-data)
+	       (list 'mktag name attrs contents))))))
+				    
 
 ;;;;;;;;;;;;;;
 ;; dirty cases
@@ -24,19 +29,27 @@
   (multiple-value-bind (name attrs contents)
       (split-name-attr-contents 'map tag-data)
     (mktag name attrs contents)))
+(defun xhtml-var (&rest tag-data)
+  "var didn't fit into common-lisp nicely."
+    (multiple-value-bind (name attrs contents)
+	(split-name-attr-contents 'var tag-data)
+      (mktag name attrs contents)))
 
 ;;;;;;;;;;;;;;;;;;
 ;; the actual code
 (defun split-name-attr-contents (tag tag-content)
   "Splits the definition of a tag in it's name (which is stringified), its attribute-value-pairs and its content."
+  (format T "snac")
   (let ((tag (string-downcase (string tag)))
 	(content tag-content)
 	(key-vals nil))
     (loop named eat-attributes while T do
+	 (util:debug-print content)
 	 (if (keywordp (first content))
 	     (progn (setf key-vals (concatenate 'list key-vals `((,(string-downcase (string (first content))) ,(second content)))))
 		    (setf content (cddr content)))
 	     (return-from eat-attributes)))
+    (util:debug-print tag key-vals content)
     (values tag key-vals content)))
     
 (defun strcon (&rest args)
@@ -48,30 +61,78 @@
 		  (apply 'strcon x)
 		  x))))
 
+(define-compiler-macro strcon (&whole form &rest args)
+  (labels ((concat-subsequent-strings (list)
+	     (if (and (stringp (first list))
+		      (stringp (second list)))
+		 (concat-subsequent-strings `(,(concatenate 'string (first list) (second list)) ,@(cddr list)))
+		 (if (> (length list) 1)
+		     `(,(first list) ,@(concat-subsequent-strings (rest list)))
+		     list))))
+    (let ((result (concat-subsequent-strings (apply 'concatenate 'list 
+						    (map 'list (lambda (arg) (if (and (listp arg) (eql (first arg) 'strcon))
+										 (rest arg)
+										 (list arg)))
+							 args)))))
+      (util:debug-print args result)
+      (cond ((= 1 (length result))
+	     (first result))
+	    ((equal `(strcon ,@result) form)
+	     form)
+	    (T
+	     `(strcon ,@result))))))
+      
 (defun mktag (name attrs &optional constr)
   "Creates a tag, in which <name> is the name of the tag (eg: \"div\"), <attrs> contains the attributes and <constr> contains the strings that are contained in it.
 Only constr is allowed to contain a list of strings (or functions that will generate strings) in order to obtain a correct result."
+  (util:debug-print name attrs constr)
   (if constr
       (strcon (mk-start-tag name attrs) (apply 'strcon constr) (mk-end-tag name))
       (mk-empty-tag name attrs)))
+(define-compiler-macro mktag (&whole form name attrs &optional constr)
+  (declare (ignore form))
+  (if constr
+      `(strcon (mk-start-tag ,name ,attrs)
+	       ,(if (listp constr) 
+		    `(strcon ,@constr)
+		    `(apply 'strcon ,constr))
+	       (mk-end-tag ,name))
+      `(mk-empty-tag ,name ,attrs)))
 
 (defun mk-end-tag (name)
   "Creates an end-tag for <name>.
 This means that <name> will be converted to <<name>/>"
   (strcon "<" name "/>"))
+(define-compiler-macro mk-end-tag (&whole form name)
+  (declare (ignore form))
+  `(strcon "<" ,name "/>"))
 
 (defun mk-empty-tag (name attrs)
   "Creates an empty tag for <name> This means the tag doesn't close over any data.
 example: (mk-empty-tag \"foo\" (list :bar \"baz\")) will expand to <foo bar=\"baz\"/>"
   (strcon "<" name (mk-attr-list attrs) " />"))
+(define-compiler-macro mk-empty-tag (&whole form name attrs)
+  (declare (ignore form))
+  `(strcon "<" ,name (mk-attr-list ,attrs) " />"))
   
 (defun mk-start-tag (name attrs)
   "Creates a start tag for <name> and <attrs>.
 example: (mk-start-tag \"foo\" (list :bar \"baz\")) will expand to <foo bar=\"baz\">"
   (strcon "<" name (mk-attr-list attrs) ">"))
+(define-compiler-macro mk-start-tag (&whole form name attrs)
+  (declare (ignore form))
+  `(strcon "<" ,name (mk-attr-list ,attrs) ">"))
 
 (defun mk-attr-list (attrs)
   "Creates an attribute-list from attrs"
   (if attrs
       (format nil "~{ ~{~A=\"~A\"~}~}" attrs)
+      ""))
+;; TODO:: this is evil, we should first see whether or not there are functions involved.  If there are functions involved, then we must revert to mapping functions in order to get the correct result.  For now we will assume that his data is static (which renders it utterly broken!)
+(define-compiler-macro mk-attr-list (&whole form attrs)
+  (declare (ignore form))
+  (if attrs
+      ;; (format nil "~{ ~{~A=\"~A\"~}~}" 'attrs) ;; the fast way << this can be used if everything is a string...
+      `(format nil "~{ ~{~A=\"~A\"~}~}"
+	       (map 'list (lambda (x) (map 'list (lambda (y) (eval y)) x)) ',attrs)) ;; this is still evil! we are still calling it outside of its regular context AND we are stealing the x and y variable (which should be safe within our package, but it's still very evil
       ""))
