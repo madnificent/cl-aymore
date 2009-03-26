@@ -39,17 +39,14 @@
 ;; the actual code
 (defun split-name-attr-contents (tag tag-content)
   "Splits the definition of a tag in it's name (which is stringified), its attribute-value-pairs and its content."
-  (format T "snac")
   (let ((tag (string-downcase (string tag)))
 	(content tag-content)
 	(key-vals nil))
     (loop named eat-attributes while T do
-	 (util:debug-print content)
 	 (if (keywordp (first content))
 	     (progn (setf key-vals (concatenate 'list key-vals `((,(string-downcase (string (first content))) ,(second content)))))
 		    (setf content (cddr content)))
 	     (return-from eat-attributes)))
-    (util:debug-print tag key-vals content)
     (values tag key-vals content)))
     
 (defun strcon (&rest args)
@@ -61,31 +58,37 @@
 		  (apply 'strcon x)
 		  x))))
 
-(define-compiler-macro strcon (&whole form &rest args)
-  (labels ((concat-subsequent-strings (list)
-	     (if (and (stringp (first list))
-		      (stringp (second list)))
-		 (concat-subsequent-strings `(,(concatenate 'string (first list) (second list)) ,@(cddr list)))
-		 (if (> (length list) 1)
-		     `(,(first list) ,@(concat-subsequent-strings (rest list)))
-		     list))))
-    (let ((result (concat-subsequent-strings (apply 'concatenate 'list 
-						    (map 'list (lambda (arg) (if (and (listp arg) (eql (first arg) 'strcon))
-										 (rest arg)
-										 (list arg)))
-							 args)))))
-      (util:debug-print args result)
-      (cond ((= 1 (length result))
-	     (first result))
-	    ((equal `(strcon ,@result) form)
-	     form)
-	    (T
-	     `(strcon ,@result))))))
+(define-compiler-macro strcon (&whole form &rest args &environment env)
+  ;; the real expander-function is str-con-on-own-level.  The other code is there to ensure the inner macroexpansions are done before running on this level.
+  ;; even though not perfect, it should suffice for this purpose
+  (flet ((str-con-on-own-level (form args)
+	   (labels ((concat-subsequent-strings (list)
+		      (if (and (stringp (first list))
+			       (stringp (second list)))
+			  (concat-subsequent-strings `(,(concatenate 'string (first list) (second list)) ,@(cddr list)))
+			  (if (> (length list) 1)
+			      `(,(first list) ,@(concat-subsequent-strings (rest list)))
+			      list))))
+	     (let ((result (concat-subsequent-strings (apply 'concatenate 'list 
+							     (map 'list (lambda (arg) (if (and (listp arg) (eql (first arg) 'strcon))
+											  (rest arg)
+											  (list arg)))
+								  args)))))
+	       (cond ((= 1 (length result))
+		      (first result))
+		     ((equal `(strcon ,@result) form)
+		      form)
+		     (T
+		      `(strcon ,@result))))))
+	 (expand-arg (arg env)
+	   (if (and arg (listp arg) (compiler-macro-function (first arg) env))
+	       (funcall (compiler-macro-function (first arg) env) arg nil)
+	       arg)))
+    (str-con-on-own-level form (map 'list (lambda (x) (expand-arg x env)) args))))
       
 (defun mktag (name attrs &optional constr)
   "Creates a tag, in which <name> is the name of the tag (eg: \"div\"), <attrs> contains the attributes and <constr> contains the strings that are contained in it.
 Only constr is allowed to contain a list of strings (or functions that will generate strings) in order to obtain a correct result."
-  (util:debug-print name attrs constr)
   (if constr
       (strcon (mk-start-tag name attrs) (apply 'strcon constr) (mk-end-tag name))
       (mk-empty-tag name attrs)))
@@ -128,11 +131,10 @@ example: (mk-start-tag \"foo\" (list :bar \"baz\")) will expand to <foo bar=\"ba
   (if attrs
       (format nil "~{ ~{~A=\"~A\"~}~}" attrs)
       ""))
-;; TODO:: this is evil, we should first see whether or not there are functions involved.  If there are functions involved, then we must revert to mapping functions in order to get the correct result.  For now we will assume that his data is static (which renders it utterly broken!)
 (define-compiler-macro mk-attr-list (&whole form attrs)
-  (declare (ignore form))
-  (if attrs
-      ;; (format nil "~{ ~{~A=\"~A\"~}~}" 'attrs) ;; the fast way << this can be used if everything is a string...
-      `(format nil "~{ ~{~A=\"~A\"~}~}"
-	       (map 'list (lambda (x) (map 'list (lambda (y) (eval y)) x)) ',attrs)) ;; this is still evil! we are still calling it outside of its regular context AND we are stealing the x and y variable (which should be safe within our package, but it's still very evil
-      ""))
+  (if (listp attrs)
+      (if attrs
+	  `(strcon ,@(loop for attr-comb in attrs collect
+			  `(strcon " " ,(first attr-comb) "=\"" ,(second attr-comb) "\"")))
+	  "")
+      form))
