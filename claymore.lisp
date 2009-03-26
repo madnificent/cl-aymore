@@ -30,7 +30,7 @@
   `(defun ,name ()
      ,@content))
 
-(defun param (variable)
+(defun par (variable)
   "Returns the value of the given variable of the last request"
   (if (stringp variable)
       (parameter variable)

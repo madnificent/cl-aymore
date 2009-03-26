@@ -1,7 +1,7 @@
 (in-package :CLaymore.html.tests)
 
-(defsuite tests)
-(in-suite tests)
+(defsuite html-tests)
+(in-suite html-tests)
 
 ;; this is tested by example
 (deftest nesting ()

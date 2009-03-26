@@ -195,9 +195,7 @@
 	(return-from handler-url
 	  (if (equal '("") url)
 	      "/"
-	      (let ((foo (format nil "~{~A~^/~}" (reverse (map 'list 'hunchentoot:url-encode url)))))
-		(util:debug-print foo)
-		foo)))))))
+	      (format nil "~{~A~^/~}" (reverse (map 'list 'hunchentoot:url-encode url)))))))))
 	    
 
 (defun search-url (route page url-sections options)
@@ -218,14 +216,10 @@
 	     (and (listp item) (eq (first item) 'when))
 	     (let ((new-route (apply (funcall (second item) :enforce) (rest (rest item)))))
 	       (util:return-when search-url
-		 (search-url `(,(first route) ,@new-route) page (rest url-sections) options))))
-;	     (when (eql (apply (funcall (second item) :enforce) (rest (rest item))) page)
-;	       (return-from search-url url-sections)))
+		 (search-url `(,(first url-sections) ,@new-route) page (rest url-sections) options))))
 	    ( ;; handler case
 	     (and (listp item) (eq (first item) 'handler))
 	     (let ((new-url-sections (funcall (funcall (second item) :to-url) url-sections options (rest (rest item)))))
 	       (if new-url-sections
-		   (progn
-		     (util:debug-print url-sections new-url-sections)
-		     (setf url-sections new-url-sections))
+		   (setf url-sections new-url-sections)
 		   (return-from search-url nil))))))))

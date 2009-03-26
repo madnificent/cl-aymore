@@ -1,7 +1,7 @@
 (in-package :CLaymore.routing.tests)
 
-(defsuite tests)
-(in-suite tests)
+(defsuite routing-tests)
+(in-suite routing-tests)
 
 (deftest has-as-url (page url &key (url-options nil))
   (util:debug-print page url url-options)

@@ -5,7 +5,7 @@
 ;; The following makes it easy to define new tags, yet it does not yet make it efficient.
 ;; It does, however, give us a place in which we may macro-expand or compiler-macro-expand to precomputed everything we know already
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (dolist (tag '(a abbr acronym address area b base bdo big blockquote body br button caption cite code col colgroup dd del div dfn dl dt em fieldset form h1 head hr html i img input ins kbd label legend li link meta noscript object ol optgroup option p param pre q samp script select small span strong style sub sup table tbody td textarea tfoot th thead title tr tt ul))
+  (dolist (tag '(a abbr acronym address area b base bdo big blockquote body br button caption cite code col colgroup dd del div dfn dl dt em fieldset form h1 h2 h3 h4 h5 h6 head hr html i img input ins kbd label legend li link meta noscript object ol optgroup option p param pre q samp script select small span strong style sub sup table tbody td textarea tfoot th thead title tr tt ul))
     (eval `(defun ,tag (&rest tag-data)
 	     (multiple-value-bind (name attrs contents)
 		 (split-name-attr-contents ',tag tag-data)
@@ -93,14 +93,15 @@ Only constr is allowed to contain a list of strings (or functions that will gene
       (strcon (mk-start-tag name attrs) (apply 'strcon constr) (mk-end-tag name))
       (mk-empty-tag name attrs)))
 (define-compiler-macro mktag (&whole form name attrs &optional constr)
-  (declare (ignore form))
-  (if constr
-      `(strcon (mk-start-tag ,name ,attrs)
-	       ,(if (listp constr) 
-		    `(strcon ,@constr)
-		    `(apply 'strcon ,constr))
-	       (mk-end-tag ,name))
-      `(mk-empty-tag ,name ,attrs)))
+  (if (listp attrs) ; this should tell us that this is an expansion in which we know the arguments (constr wouldn't be a meaningless symbol in this case)
+      (if constr 
+	  `(strcon (mk-start-tag ,name ,attrs)
+		   ,(if (listp constr) 
+			`(strcon ,@constr)
+			`(apply 'strcon ,constr))
+		   (mk-end-tag ,name))
+	  `(mk-empty-tag ,name ,attrs))
+      form))
 
 (defun mk-end-tag (name)
   "Creates an end-tag for <name>.
@@ -108,7 +109,7 @@ This means that <name> will be converted to <<name>/>"
   (strcon "<" name "/>"))
 (define-compiler-macro mk-end-tag (&whole form name)
   (declare (ignore form))
-  `(strcon "<" ,name "/>"))
+  `(strcon "</" ,name ">"))
 
 (defun mk-empty-tag (name attrs)
   "Creates an empty tag for <name> This means the tag doesn't close over any data.
