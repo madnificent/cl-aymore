@@ -1,4 +1,4 @@
-(in-package :CLaymore.html)
+(in-package :CLaymore.html.full)
 
 (defun build-path (path &rest options)
   "Creates a path for a page with the given key-values options"

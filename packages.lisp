@@ -38,9 +38,8 @@
 	   :def-identification-handler
 	   :identifies-function))
 	   
-(defpackage CLaymore.html
+(defpackage CLaymore.html.full
   (:use :common-lisp
-	:CLaymore
 	:CLaymore.routing)
   (:export :a ;; strict xhtml tags
 	   :abbr
@@ -116,6 +115,19 @@
 	   :var)
   (:export :htmlify
 	   :button-to
+	   :bttn-to
+	   :link-to-page
+	   :redirect-to-page
+	   :build-path
+	   :text-field
+	   :text-area
+	   :submit-button))
+
+(defpackage CLaymore.html
+  (:use :CLaymore.html.full)
+  (:export :a :acronym :blockquote :body :br :button :div :em :form :h1 :h2 :h3 :h4 :h5 :h6 :head :html :img
+	   :label :li :link :ol :p :pre :script :span :strong :table :td :textarea :th :title :tr :ul)
+  (:export :button-to
 	   :bttn-to
 	   :link-to-page
 	   :redirect-to-page

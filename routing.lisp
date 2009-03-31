@@ -153,6 +153,7 @@
 
 (defun search-handler (route url-sections)
   "Searches for a handler for the current page in the currently known urls."
+  (declare (special *url-variables*))
   (with-local-parsing-environment
     (when (cl-ppcre:scan (concatenate 'string "^" (first route) "$") (first url-sections))
       ;; moving to an iterative solution

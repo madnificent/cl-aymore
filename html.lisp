@@ -1,6 +1,6 @@
 ;;;; This is the micro HTML-generation-library.  It is possible to make this more efficient by expanding the functions, but that can be implemented later.
 ;;;; TODO: Throw all the existing tags from the xhtml standard in here and implement them
-(in-package :CLaymore.html)
+(in-package :CLaymore.html.full)
 
 (eval-when (:compile-toplevel :load-toplevel)
   (defun def-tag (name &optional (vname name))
