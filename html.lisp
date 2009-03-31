@@ -2,19 +2,27 @@
 ;;;; TODO: Throw all the existing tags from the xhtml standard in here and implement them
 (in-package :CLaymore.html)
 
+(eval-when (:compile-toplevel :load-toplevel)
+  (defun def-tag (name &optional (vname name))
+    "Defines a tag by its name (and function-name).  The expansions will be automatically generated."
+    (eval `(defun ,vname (&rest tag-data)
+	     (multiple-value-bind (name attrs contents)
+		 (split-name-attr-contents ',name tag-data)
+	       (mktag name attrs contents))))
+    (eval `(define-compiler-macro ,vname (&rest tag-data)
+	     (multiple-value-bind (name attrs contents)	
+		 (split-name-attr-contents ',name tag-data)
+	       (list 'mktag name attrs contents))))))
+  
 ;; The following makes it easy to define new tags, yet it does not yet make it efficient.
 ;; It does, however, give us a place in which we may macro-expand or compiler-macro-expand to precomputed everything we know already
-(eval-when (:compile-toplevel :load-toplevel :execute)
+(eval-when (:compile-toplevel :load-toplevel)
+  ;; tags with regular names
   (dolist (tag '(a abbr acronym address area b base bdo big blockquote body br button caption cite code col colgroup dd del div dfn dl dt em fieldset form h1 h2 h3 h4 h5 h6 head hr html i img input ins kbd label legend li link meta noscript object ol optgroup option p param pre q samp script select small span strong style sub sup table tbody td textarea tfoot th thead title tr tt ul))
-    (eval `(defun ,tag (&rest tag-data)
-	     (multiple-value-bind (name attrs contents)
-		 (split-name-attr-contents ',tag tag-data)
-	       (mktag name attrs contents))))
-    (eval `(define-compiler-macro ,tag (&rest tag-data)
-	     (multiple-value-bind (name attrs contents)
-		 (split-name-attr-contents ',tag tag-data)
-	       (list 'mktag name attrs contents))))))
-				    
+    (def-tag tag))
+  ;; tags with modified names (due to name-clashes)
+  (dolist (tag-def '((map image-map) (var xhtml-var)))
+    (def-tag (first tag-def) (second tag-def))))
 
 ;;;;;;;;;;;;;;
 ;; dirty cases
@@ -24,16 +32,6 @@
 (defun !doctype (string)
   "Please expect this to change in the future, as it should accept a keyword for the most common doctypes"
   (format nil "<!DOCTYPE ~A>" string))
-(defun image-map (&rest tag-data)
-  "map didn't fit into common-lisp nicely.  Since it isn't used too widely, it has been put into a differently named function (just hope this doesn't surprise too many people)."
-  (multiple-value-bind (name attrs contents)
-      (split-name-attr-contents 'map tag-data)
-    (mktag name attrs contents)))
-(defun xhtml-var (&rest tag-data)
-  "var didn't fit into common-lisp nicely."
-    (multiple-value-bind (name attrs contents)
-	(split-name-attr-contents 'var tag-data)
-      (mktag name attrs contents)))
 
 ;;;;;;;;;;;;;;;;;;
 ;; the actual code
@@ -106,7 +104,7 @@ Only constr is allowed to contain a list of strings (or functions that will gene
 (defun mk-end-tag (name)
   "Creates an end-tag for <name>.
 This means that <name> will be converted to <<name>/>"
-  (strcon "<" name "/>"))
+  (strcon "</" name ">"))
 (define-compiler-macro mk-end-tag (&whole form name)
   (declare (ignore form))
   `(strcon "</" ,name ">"))
