@@ -25,13 +25,12 @@
 ;;     ;; return the statements
 ;;     `(progn ,@(reverse statements))))
 
-(defmacro defpage (name &body content)
+(defmacro defpage (name vars &body content)
   "Defines a page, and adds it to the dispatch-table"
-  `(defun ,name ()
+  `(defun ,name (&key ,@(loop for var in vars collect `(,var (param ',var))))
      ,@content))
 
 (defun param (variable)
   "Returns the value of the given variable of the last request"
-  (if (stringp variable)
-      (parameter variable)
-      (parameter (format nil "~A" variable))))
+  (or (claymore.routing:url-var variable) 
+      (parameter (if (stringp variable) variable (format nil "~A" variable)))))
