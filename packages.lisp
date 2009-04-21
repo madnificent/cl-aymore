@@ -7,7 +7,7 @@
   (:use :cl :hunchentoot)
   (:export :defpage
 	   :page-path
-	   :par))
+	   :param :param*))
 
 (defpackage :CLaymore.routing
   (:use :common-lisp
