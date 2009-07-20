@@ -12,8 +12,8 @@
 
 (defun link-to-page (name page &optional (page-options nil) &rest path-options)
   "Links to the given page"
-  (let ((hurl (apply 'build-path 
-		     (apply 'CLaymore.routing:handler-url page page-options)
+  (let ((hurl (apply #'build-path 
+		     (apply #'CLaymore.routing:handler-url page page-options)
 		     path-options)))
     (a :href hurl
        name)))

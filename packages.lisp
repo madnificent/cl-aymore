@@ -121,7 +121,8 @@
 	   :build-path
 	   :text-field
 	   :text-area
-	   :submit-button))
+	   :submit-button)
+  (:nicknames :>))
 
 (defpackage CLaymore.html
   (:use :CLaymore.html.full)
