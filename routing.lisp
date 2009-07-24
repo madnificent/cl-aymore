@@ -76,6 +76,7 @@
 (defvar *ROUTING-TABLE* nil)
 (defvar *STATIC-DIRECTORIES* nil)
 (defvar *subroutes* (make-hash-table))
+(defvar *page-handler-function* #'funcall "This function is to be called when the contents of a page is requested.  It receives the function of the page that is to be rendered.")
 
 ;;;; Stuff that needs cleaning up
 (defun set-hunchentoot-routing-table ()
@@ -101,7 +102,7 @@
   (declare (special hunchentoot:*request*))
   (let ((func (page-handler (cl-ppcre:scan-to-strings "[^\\?]+" (hunchentoot:request-uri hunchentoot:*request*)))))
     (when func
-      (funcall func))))
+      (funcall *page-handler-function* func))))
 
 ;;;; subroute definition
 (defun subroute (name)

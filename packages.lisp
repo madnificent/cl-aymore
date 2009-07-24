@@ -13,7 +13,8 @@
   (:use :common-lisp
 	:hunchentoot
 	:cl-ppcre)
-  (:export :set-routing-table
+  (:export ::*page-handler-function*
+	   :set-routing-table
 	   :add-static-routing-dispatcher
 	   :*static-files-path*
 	   :*url-variables*
