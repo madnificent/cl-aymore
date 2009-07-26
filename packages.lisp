@@ -127,6 +127,7 @@
 
 (defpackage CLaymore.html
   (:use :CLaymore.html.full)
+  (:export :htmlify)
   (:export :a :acronym :blockquote :body :br :button :div :em :form :h1 :h2 :h3 :h4 :h5 :h6 :head :html :img
 	   :label :li :link :ol :p :pre :script :span :strong :table :td :textarea :th :title :tr :ul)
   (:export :button-to

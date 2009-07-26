@@ -47,6 +47,13 @@
 	     (return-from eat-attributes)))
     (values tag key-vals content)))
     
+(defgeneric htmlify (object)
+  (:documentation "Creates a string from the given object, in order for it to be printable"))
+(defmethod htmlify (object)
+  (format nil "~A" object))
+(defmethod htmlify ((s string))
+  s)
+
 (defun strcon (&rest args)
   "Concatenates strings together"
   (apply 'concatenate 
@@ -54,7 +61,7 @@
 	 (loop for x in args collect
 	      (if (listp x)
 		  (apply 'strcon x)
-		  x))))
+		  (htmlify x)))))
 
 (define-compiler-macro strcon (&whole form &rest args &environment env)
   ;; the real expander-function is str-con-on-own-level.  The other code is there to ensure the inner macroexpansions are done before running on this level.
