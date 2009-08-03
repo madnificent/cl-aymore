@@ -77,6 +77,7 @@
 (defvar *STATIC-DIRECTORIES* nil)
 (defvar *subroutes* (make-hash-table))
 (defvar *page-handler-function* #'funcall "This function is to be called when the contents of a page is requested.  It receives the function of the page that is to be rendered.")
+(defvar *current-page* nil "This contains the page that is currently being rendered.  Nil when no page is being rendered")
 
 ;;;; Stuff that needs cleaning up
 (defun set-hunchentoot-routing-table ()
@@ -98,11 +99,22 @@
   "Sets the routing table to the given route"
   (setf *ROUTING-TABLE* (expand-handles-cases (list (concatenate 'list '("") routes)))))
 
+(defmacro with-enclosing-special-vars (var-value-s &body body)
+  "This macro allows you to enclose special vars in a slightly simpler manner.  You call this by using something in the range of
+ (with-enclosing-special-vars
+     ((*foo* 1000) (*bar* 100))
+   (your-code) (be) (here))"
+  `(let (,@(loop for (var value) in var-value-s
+	      collect `(,var ,value)))
+     (declare (special ,@(loop for (var) in var-value-s collect var)))
+     ,@body))
+
 (defun hunchentoot-get-handler ()
   (declare (special hunchentoot:*request*))
   (let ((func (page-handler (cl-ppcre:scan-to-strings "[^\\?]+" (hunchentoot:request-uri hunchentoot:*request*)))))
     (when func
-      (funcall *page-handler-function* func))))
+      (with-enclosing-special-vars ((*current-page* func))
+	(funcall *page-handler-function* func)))))
 
 ;;;; subroute definition
 (defun subroute (name)
