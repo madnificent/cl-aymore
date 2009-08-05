@@ -42,7 +42,7 @@
 	(key-vals nil))
     (loop named eat-attributes while T do
 	 (if (keywordp (first content))
-	     (progn (setf key-vals (concatenate 'list key-vals `((,(string-downcase (string (first content))) ,(second content)))))
+	     (progn (setf key-vals (concatenate 'list key-vals `((,(interpret-tag-name (string (first content))) ,(second content)))))
 		    (setf content (cddr content)))
 	     (return-from eat-attributes)))
     (values tag key-vals content)))
@@ -141,6 +141,20 @@ example: (mk-start-tag \"foo\" (list :bar \"baz\")) will expand to <foo bar=\"ba
   (if (listp attrs)
       (if attrs
 	  `(strcon ,@(loop for attr-comb in attrs collect
-			  `(strcon " " ,(first attr-comb) "=\"" ,(second attr-comb) "\"")))
+			  `(strcon " " ,(upcase-after-dash (first attr-comb)) "=\"" ,(second attr-comb) "\"")))
 	  "")
       form))
+
+(defun interpret-tag-name (tag)
+  (upcase-after-dash (string-downcase (format nil "~A" tag))))
+
+(defun upcase-word (word)
+	   (apply #'concatenate 'string
+		  (list (char-upcase (elt word 0)))
+		  (loop for char in (rest (concatenate 'list word)) collect (list char))))
+
+(defun upcase-after-dash (word)
+  (let ((split (cl-ppcre:split "-" word)))
+    (apply #'concatenate 'string (first split)
+	   (loop for part in (rest split)
+	      collect (upcase-word part)))))
