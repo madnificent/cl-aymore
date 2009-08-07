@@ -114,7 +114,9 @@
 	   :tr
 	   :tt
 	   :ul
-	   :var)
+	   :var
+	   :!doctype ;; doctype and comments
+	   :!--)
   (:export :htmlify
 	   :button-to
 	   :bttn-to

@@ -26,12 +26,14 @@
 
 ;;;;;;;;;;;;;;
 ;; dirty cases
-(defun !-- (&rest comments)
+(defun !-- (comments &rest body)
   "(x)html comment"
-  (format nil "<!--~A-->" (apply 'strcon comments)))
-(defun !doctype (string)
+  (format nil "<!--~A-->~{~A~}"
+	  (apply #'strcon comments)
+	  body))
+(defun !doctype (string &rest body)
   "Please expect this to change in the future, as it should accept a keyword for the most common doctypes"
-  (format nil "<!DOCTYPE ~A>" string))
+  (format nil "<!DOCTYPE ~A>~{~A~}" string body))
 
 ;;;;;;;;;;;;;;;;;;
 ;; the actual code
